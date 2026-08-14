@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+/*
+  JK Express brand — sampled from public/logo.png
+  Primary blue: #002090
+  Accent red:   #E80000
+  Support:      white, soft blue-grey
+*/
+
+:root {
+  --background: #f7f8fc;
+  --foreground: #0b1224;
+
+  /* Brand blue (logo “JK XPRESS” + building) */
+  --navy-50: #eef1fa;
+  --navy-100: #d6ddf2;
+  --navy-500: #2a4cb0;
+  --navy-800: #001f7a;
+  --navy-900: #002090;
+  --navy-950: #001050;
+
+  /* Brand red (logo “E / X” + banner) */
+  --gold-100: #ffe5e5;
+  --gold-400: #ff4d4d;
+  --gold-500: #e80000;
+  --gold-900: #8f0000;
+
+  --brand-blue: #002090;
+  --brand-red: #e80000;
+  --brand-blue-soft: #7088c0;
+  --brand-red-soft: #ffe5e5;
+  --brand-primary: var(--brand-blue);
+  --brand-accent: var(--brand-red);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-navy-50: var(--navy-50);
+  --color-navy-100: var(--navy-100);
+  --color-navy-500: var(--navy-500);
+  --color-navy-800: var(--navy-800);
+  --color-navy-900: var(--navy-900);
+  --color-navy-950: var(--navy-950);
+  --color-gold-100: var(--gold-100);
+  --color-gold-400: var(--gold-400);
+  --color-gold-500: var(--gold-500);
+  --color-gold-900: var(--gold-900);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-red: var(--brand-red);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* Prefer utility classes on links; avoid forcing brand blue on every <a>
+   (breaks dark footers, cards, and nav). */
+a:not([class]) {
+  color: var(--brand-primary);
+}
+
+::selection {
+  background: rgba(232, 0, 0, 0.18);
+  color: var(--foreground);
+}
+
+/* Accent bar used on public pages (logo bottom banner) */
+.brand-red-bar {
+  background: linear-gradient(90deg, var(--brand-accent) 0%, #c40000 100%);
+}
+
+.brand-hero-bg {
+  background:
+    radial-gradient(ellipse 80% 60% at 100% 0%, rgba(232, 0, 0, 0.18), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 0% 100%, rgba(0, 32, 144, 0.45), transparent 50%),
+    linear-gradient(160deg, #001050 0%, var(--brand-primary) 45%, #001a6b 100%);
+}
+
+/* Print helpers for receipts/reports */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+}

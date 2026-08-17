@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, CalendarDays } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { formatDate } from "@/lib/utils";
 
 const FALLBACK_COVER = "/site-photos/site-01.jpeg";
@@ -15,7 +16,10 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const article = await db.newsArticle.findUnique({ where: { slug } });
+  const article = await safeQuery(
+    () => db.newsArticle.findUnique({ where: { slug } }),
+    null,
+  );
   return {
     title: article?.title ?? "Article",
     description: article?.excerpt ?? undefined,
@@ -28,16 +32,24 @@ export default async function NewsArticlePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const article = await db.newsArticle.findFirst({
-    where: { slug, isPublished: true },
-  });
+  const article = await safeQuery(
+    () =>
+      db.newsArticle.findFirst({
+        where: { slug, isPublished: true },
+      }),
+    null,
+  );
   if (!article) notFound();
 
-  const related = await db.newsArticle.findMany({
-    where: { isPublished: true, NOT: { id: article.id } },
-    orderBy: { publishedAt: "desc" },
-    take: 3,
-  });
+  const related = await safeQuery(
+    () =>
+      db.newsArticle.findMany({
+        where: { isPublished: true, NOT: { id: article.id } },
+        orderBy: { publishedAt: "desc" },
+        take: 3,
+      }),
+    [],
+  );
 
   const paragraphs = article.content
     .split(/\n\s*\n/)

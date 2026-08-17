@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ProjectSlider } from "@/components/ui/project-slider";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { projectCoverImage } from "@/lib/site-photos";
 import { statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
@@ -12,11 +13,15 @@ import { statusVariant } from "@/lib/status";
 export const metadata = { title: "Projects" };
 
 export default async function ProjectsPage() {
-  const projects = await db.constructionProject.findMany({
-    where: { isPublished: true, deletedAt: null },
-    orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
-    take: 12,
-  });
+  const projects = await safeQuery(
+    () =>
+      db.constructionProject.findMany({
+        where: { isPublished: true, deletedAt: null },
+        orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
+        take: 12,
+      }),
+    [],
+  );
 
   const slides = projects.slice(0, 6).map((project) => ({
     id: project.id,

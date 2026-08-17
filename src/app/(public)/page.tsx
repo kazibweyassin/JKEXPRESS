@@ -16,6 +16,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/utils";
 import { getCompanySettings } from "@/lib/company";
+import { safeQuery } from "@/lib/safe-query";
 import { projectCoverImage } from "@/lib/site-photos";
 import HeroSlider from "@/components/ui/hero-slider";
 
@@ -24,35 +25,57 @@ export default async function HomePage() {
 
   const [featuredProperties, projects, testimonials, news, stats] =
     await Promise.all([
-      db.property.findMany({
-        where: { isPublished: true, isFeatured: true, deletedAt: null },
-        include: {
-          images: { where: { isPrimary: true }, take: 1 },
-          _count: { select: { images: true } },
-        },
-        take: 6,
-        orderBy: { listedAt: "desc" },
-      }),
-      db.constructionProject.findMany({
-        where: { isPublished: true, deletedAt: null },
-        take: 6,
-        orderBy: { updatedAt: "desc" },
-      }),
-      db.testimonial.findMany({
-        where: { isActive: true },
-        orderBy: { sortOrder: "asc" },
-        take: 3,
-      }),
-      db.newsArticle.findMany({
-        where: { isPublished: true },
-        orderBy: { publishedAt: "desc" },
-        take: 3,
-      }),
+      safeQuery(
+        () =>
+          db.property.findMany({
+            where: { isPublished: true, isFeatured: true, deletedAt: null },
+            include: {
+              images: { where: { isPrimary: true }, take: 1 },
+              _count: { select: { images: true } },
+            },
+            take: 6,
+            orderBy: { listedAt: "desc" },
+          }),
+        [],
+      ),
+      safeQuery(
+        () =>
+          db.constructionProject.findMany({
+            where: { isPublished: true, deletedAt: null },
+            take: 6,
+            orderBy: { updatedAt: "desc" },
+          }),
+        [],
+      ),
+      safeQuery(
+        () =>
+          db.testimonial.findMany({
+            where: { isActive: true },
+            orderBy: { sortOrder: "asc" },
+            take: 3,
+          }),
+        [],
+      ),
+      safeQuery(
+        () =>
+          db.newsArticle.findMany({
+            where: { isPublished: true },
+            orderBy: { publishedAt: "desc" },
+            take: 3,
+          }),
+        [],
+      ),
       Promise.all([
-        db.property.count({ where: { isPublished: true, deletedAt: null } }),
-        db.constructionProject.count({ where: { status: "COMPLETED" } }),
-        db.unit.count({ where: { status: "OCCUPIED" } }),
-        db.lease.count({ where: { status: "ACTIVE" } }),
+        safeQuery(
+          () => db.property.count({ where: { isPublished: true, deletedAt: null } }),
+          0,
+        ),
+        safeQuery(
+          () => db.constructionProject.count({ where: { status: "COMPLETED" } }),
+          0,
+        ),
+        safeQuery(() => db.unit.count({ where: { status: "OCCUPIED" } }), 0),
+        safeQuery(() => db.lease.count({ where: { status: "ACTIVE" } }), 0),
       ]),
     ]);
 

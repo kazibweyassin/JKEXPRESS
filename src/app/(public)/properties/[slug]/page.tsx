@@ -10,6 +10,7 @@ import { MapEmbed } from "@/components/ui/map-embed";
 import { PropertyCard } from "@/components/ui/property-card";
 import { getCompanySettings } from "@/lib/company";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { getLocationStory } from "@/lib/location-stories";
 import { formatCurrency, statusLabel } from "@/lib/utils";
 import { propertyCoverImage } from "@/lib/property-images";
@@ -21,7 +22,10 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const property = await db.property.findUnique({ where: { slug } });
+  const property = await safeQuery(
+    () => db.property.findUnique({ where: { slug } }),
+    null,
+  );
   return { title: property?.title ?? "Property" };
 }
 
@@ -32,14 +36,18 @@ export default async function PropertyDetailPage({
 }) {
   const { slug } = await params;
   const company = await getCompanySettings();
-  const property = await db.property.findFirst({
-    where: { slug, isPublished: true, deletedAt: null },
-    include: {
-      images: { orderBy: { sortOrder: "asc" } },
-      amenities: true,
-      agent: true,
-    },
-  });
+  const property = await safeQuery(
+    () =>
+      db.property.findFirst({
+        where: { slug, isPublished: true, deletedAt: null },
+        include: {
+          images: { orderBy: { sortOrder: "asc" } },
+          amenities: true,
+          agent: true,
+        },
+      }),
+    null,
+  );
 
   if (!property) notFound();
 
@@ -56,24 +64,28 @@ export default async function PropertyDetailPage({
     .filter(Boolean)
     .join(", ");
 
-  const similar = await db.property.findMany({
-    where: {
-      isPublished: true,
-      deletedAt: null,
-      id: { not: property.id },
-      OR: [
-        ...(property.city ? [{ city: property.city }] : []),
-        { propertyType: property.propertyType },
-        { listingType: property.listingType },
-      ],
-    },
-    include: {
-      images: { where: { isPrimary: true }, take: 1 },
-      _count: { select: { images: true } },
-    },
-    take: 3,
-    orderBy: [{ isFeatured: "desc" }, { listedAt: "desc" }],
-  });
+  const similar = await safeQuery(
+    () =>
+      db.property.findMany({
+        where: {
+          isPublished: true,
+          deletedAt: null,
+          id: { not: property.id },
+          OR: [
+            ...(property.city ? [{ city: property.city }] : []),
+            { propertyType: property.propertyType },
+            { listingType: property.listingType },
+          ],
+        },
+        include: {
+          images: { where: { isPrimary: true }, take: 1 },
+          _count: { select: { images: true } },
+        },
+        take: 3,
+        orderBy: [{ isFeatured: "desc" }, { listedAt: "desc" }],
+      }),
+    [],
+  );
 
   const waLink = whatsappLink(
     company.whatsapp ?? company.phone,

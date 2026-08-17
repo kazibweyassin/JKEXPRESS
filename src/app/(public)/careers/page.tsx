@@ -3,16 +3,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PageHero } from "@/components/ui/page-hero";
 import { getCompanySettings } from "@/lib/company";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { statusLabel } from "@/lib/utils";
 
 export const metadata = { title: "Careers" };
 
 export default async function CareersPage() {
   const company = await getCompanySettings();
-  const jobs = await db.jobPosting.findMany({
-    where: { isActive: true },
-    orderBy: { createdAt: "desc" },
-  });
+  const jobs = await safeQuery(
+    () =>
+      db.jobPosting.findMany({
+        where: { isActive: true },
+        orderBy: { createdAt: "desc" },
+      }),
+    [],
+  );
 
   return (
     <div>

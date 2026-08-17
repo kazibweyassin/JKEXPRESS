@@ -22,6 +22,16 @@ describe("getEnv", () => {
     expect(env.AUTH_SECRET).toBe("1234567890123456");
   });
 
+  it("defaults DATABASE_URL when it is missing or empty", () => {
+    process.env = {
+      ...originalEnv,
+      DATABASE_URL: "",
+      AUTH_SECRET: "1234567890123456",
+    };
+
+    expect(getEnv().DATABASE_URL).toBe("file:./dev.db");
+  });
+
   it("throws when no auth secret is configured", () => {
     process.env = {
       ...originalEnv,

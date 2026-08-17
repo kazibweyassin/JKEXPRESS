@@ -14,10 +14,15 @@ export const metadata = {
 const FALLBACK_COVER = "/site-photos/site-01.jpeg";
 
 export default async function NewsPage() {
-  const articles = await db.newsArticle.findMany({
-    where: { isPublished: true },
-    orderBy: { publishedAt: "desc" },
-  });
+  let articles: Awaited<ReturnType<typeof db.newsArticle.findMany>> = [];
+  try {
+    articles = await db.newsArticle.findMany({
+      where: { isPublished: true },
+      orderBy: { publishedAt: "desc" },
+    });
+  } catch {
+    articles = [];
+  }
 
   const [featured, ...rest] = articles;
 

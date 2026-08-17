@@ -1,14 +1,18 @@
+import { connection } from "next/server";
 import { PublicFooter } from "@/components/layout/public-footer";
 import { PublicHeader } from "@/components/layout/public-header";
 import { StickyCtaBar } from "@/components/layout/sticky-cta-bar";
 import { WhatsAppFloat } from "@/components/layout/whatsapp-float";
 import { getCompanySettings } from "@/lib/company";
 
+export const dynamic = "force-dynamic";
+
 export default async function PublicLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  await connection();
   const company = await getCompanySettings();
 
   return (

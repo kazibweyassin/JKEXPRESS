@@ -115,7 +115,7 @@ export async function updateLeadStage(leadId: string, stage: string): Promise<Ac
 
 export async function assignLead(leadId: string, assigneeId: string): Promise<ActionResult> {
   const session = await auth();
-  if (!session?.user || !hasPermission(session.user.permissions, "leads", "assign")) {
+  if (!session?.user || !hasSessionPermission(session, "leads", "assign")) {
     return { success: false, error: "Forbidden" };
   }
 

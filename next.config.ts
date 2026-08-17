@@ -1,10 +1,11 @@
 import type { NextConfig } from "next";
 import path from "path";
 
-// Prisma requires a nonempty URL at client init. Hosts like Vercel may
-// leave DATABASE_URL unset/empty during build; use the local SQLite default.
+// Prisma requires a nonempty URL at client init. Build hosts may leave
+// DATABASE_URL empty; use the local Postgres default so `prisma generate` works.
 if (!process.env.DATABASE_URL?.trim()) {
-  process.env.DATABASE_URL = "file:./dev.db";
+  process.env.DATABASE_URL =
+    "postgresql://postgres:postgres@localhost:5432/jkexpress?schema=public";
 }
 
 const nextConfig: NextConfig = {

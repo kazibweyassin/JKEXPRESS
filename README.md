@@ -23,6 +23,7 @@ The app includes:
 ```bash
 npm install
 cp .env.example .env
+docker compose up -d
 npm run db:setup
 npm run dev
 ```
@@ -53,25 +54,38 @@ Password for all demo users: **`Password123!`**
 | `npm run build` | Production build |
 | `npm run start` | Start production server |
 | `npm run lint` | ESLint |
-| `npm run db:push` | Sync Prisma schema |
+| `npm run db:migrate` | Apply Prisma migrations (`prisma migrate deploy`) |
+| `npm run db:migrate:dev` | Create a migration in development |
+| `npm run db:push` | Push schema without a migration (dev only) |
 | `npm run db:seed` | Seed sample Uganda data |
-| `npm run db:setup` | Push schema + seed |
+| `npm run db:setup` | Migrate + seed |
 
 ## Environment
 
 See `.env.example`. Required:
 
-- `DATABASE_URL` — local default `file:./dev.db`
+- `DATABASE_URL` — PostgreSQL connection string  
+  Local default: `postgresql://postgres:postgres@localhost:5432/jkexpress?schema=public`
 - `AUTH_SECRET` / `NEXTAUTH_SECRET` — min 16 characters
 
 Optional: object storage, Resend email keys (local mock storage is used by default).
 
-## PostgreSQL (production)
+## PostgreSQL (Prisma)
 
-1. Change `provider` in `prisma/schema.prisma` to `postgresql`.  
-2. Set `DATABASE_URL` to your Postgres URL.  
-3. Optionally use `docker-compose.yml` for a local Postgres container.  
-4. Run `npm run db:setup`.
+The app uses **Prisma + PostgreSQL** everywhere (local and Render).
+
+**Local**
+
+1. `docker compose up -d`
+2. `cp .env.example .env`
+3. `npm run db:setup`
+
+**Render**
+
+1. New → PostgreSQL (same region as the web service).
+2. Copy the database **Internal Database URL** into the web service env var `DATABASE_URL`.
+3. If connections fail, append `?sslmode=require`.
+4. Start command: `npm start` (runs `prisma migrate deploy`, seeds if empty, then Next.js).
 
 ## Architecture
 

@@ -11,14 +11,16 @@ describe("getEnv", () => {
   it("accepts a valid auth setup", () => {
     process.env = {
       ...originalEnv,
-      DATABASE_URL: "file:./dev.db",
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/jkexpress?schema=public",
       AUTH_SECRET: "1234567890123456",
       NEXTAUTH_SECRET: "",
     };
 
     const env = getEnv();
 
-    expect(env.DATABASE_URL).toBe("file:./dev.db");
+    expect(env.DATABASE_URL).toBe(
+      "postgresql://postgres:postgres@localhost:5432/jkexpress?schema=public",
+    );
     expect(env.AUTH_SECRET).toBe("1234567890123456");
   });
 
@@ -29,13 +31,15 @@ describe("getEnv", () => {
       AUTH_SECRET: "1234567890123456",
     };
 
-    expect(getEnv().DATABASE_URL).toBe("file:./dev.db");
+    expect(getEnv().DATABASE_URL).toBe(
+      "postgresql://postgres:postgres@localhost:5432/jkexpress?schema=public",
+    );
   });
 
   it("throws when no auth secret is configured", () => {
     process.env = {
       ...originalEnv,
-      DATABASE_URL: "file:./dev.db",
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/jkexpress?schema=public",
       AUTH_SECRET: "",
       NEXTAUTH_SECRET: "",
     };

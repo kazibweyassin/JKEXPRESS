@@ -1,12 +1,13 @@
 import { PrismaClient } from "@prisma/client";
 
-const SQLITE_FALLBACK = "file:./dev.db";
+const POSTGRES_FALLBACK =
+  "postgresql://postgres:postgres@localhost:5432/jkexpress?schema=public";
 
 function resolveDatabaseUrl() {
   const url = process.env.DATABASE_URL?.trim();
   if (url) return url;
-  process.env.DATABASE_URL = SQLITE_FALLBACK;
-  return SQLITE_FALLBACK;
+  process.env.DATABASE_URL = POSTGRES_FALLBACK;
+  return POSTGRES_FALLBACK;
 }
 
 const databaseUrl = resolveDatabaseUrl();

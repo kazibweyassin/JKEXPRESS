@@ -1,39 +1,41 @@
 /**
- * Ensure the database schema exists, then seed once if empty.
- * Used on host start (Render) where the SQLite file is not in git.
+ * Apply Prisma migrations, then seed once if the database is empty.
+ * Used on Render/production start.
  */
 import { execSync } from "node:child_process";
 import { PrismaClient } from "@prisma/client";
 
-const SQLITE_FALLBACK = "file:./dev.db";
+const POSTGRES_FALLBACK =
+  "postgresql://postgres:postgres@localhost:5432/jkexpress?schema=public";
 
 function resolveDatabaseUrl() {
   const url = process.env.DATABASE_URL?.trim();
   if (url) return url;
-  process.env.DATABASE_URL = SQLITE_FALLBACK;
-  return SQLITE_FALLBACK;
+  process.env.DATABASE_URL = POSTGRES_FALLBACK;
+  return POSTGRES_FALLBACK;
 }
 
 async function main() {
   const url = resolveDatabaseUrl();
 
-  if (/^postgres(ql)?:\/\//i.test(url)) {
-    console.warn(
-      "[bootstrap-db] DATABASE_URL is PostgreSQL but prisma/schema.prisma uses sqlite.",
+  if (/^file:/i.test(url)) {
+    console.error(
+      "[bootstrap-db] DATABASE_URL is a SQLite file, but Prisma is configured for PostgreSQL.",
     );
-    console.warn(
-      "[bootstrap-db] Either switch the Prisma provider to postgresql, or point DATABASE_URL at a sqlite file.",
+    console.error(
+      "[bootstrap-db] Set DATABASE_URL to a Postgres connection string (Render Postgres or docker compose).",
     );
+    return;
   }
 
   try {
-    console.log("[bootstrap-db] Applying schema...");
-    execSync("npx prisma db push --skip-generate", {
+    console.log("[bootstrap-db] Applying Prisma migrations...");
+    execSync("npx prisma migrate deploy", {
       stdio: "inherit",
       env: process.env,
     });
   } catch (error) {
-    console.error("[bootstrap-db] prisma db push failed", error);
+    console.error("[bootstrap-db] prisma migrate deploy failed", error);
     return;
   }
 

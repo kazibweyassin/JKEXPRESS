@@ -1,7 +1,10 @@
 import { z } from "zod";
 
 const envSchema = z.object({
-  DATABASE_URL: z.string().min(1).default("file:./dev.db"),
+  DATABASE_URL: z
+    .string()
+    .min(1)
+    .default("postgresql://postgres:postgres@localhost:5432/jkexpress?schema=public"),
   AUTH_SECRET: z.string().min(16).optional(),
   NEXTAUTH_SECRET: z.string().min(16).optional(),
   AUTH_URL: z.string().url().optional(),

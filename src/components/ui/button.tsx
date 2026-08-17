@@ -9,8 +9,10 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "border border-navy-200 bg-white text-navy-900 hover:bg-navy-50 shadow-sm",
+        accent:
+          "bg-[linear-gradient(135deg,_#e80000_0%,_#ff4d4d_100%)] text-white font-semibold shadow-[0_12px_35px_-12px_rgba(232,0,0,0.55)] hover:shadow-[0_16px_42px_-12px_rgba(232,0,0,0.7)] ring-1 ring-red-200/70",
         gold: "bg-[linear-gradient(135deg,_#e80000_0%,_#ff4d4d_100%)] text-white font-semibold shadow-[0_12px_35px_-12px_rgba(232,0,0,0.55)] hover:shadow-[0_16px_42px_-12px_rgba(232,0,0,0.7)] ring-1 ring-red-200/70",
-        destructive: "bg-red-600 text-white hover:bg-red-700",
+        destructive: "bg-rose-700 text-white hover:bg-rose-800",
         outline:
           "border border-slate-300 bg-white hover:bg-navy-50 text-navy-900",
         secondary: "bg-navy-50 text-navy-900 hover:bg-navy-100",

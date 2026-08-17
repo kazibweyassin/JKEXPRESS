@@ -99,7 +99,7 @@ export function PublicLeadForm({
       ) : null}
       <Button
         type="submit"
-        variant={compact ? "gold" : "default"}
+        variant={compact ? "accent" : "accent"}
         disabled={pending}
         className="w-full px-6 py-2.5 text-base sm:w-auto"
       >

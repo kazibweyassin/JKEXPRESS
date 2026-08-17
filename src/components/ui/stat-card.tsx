@@ -8,6 +8,8 @@ export function StatCard({
   subtitle,
   icon: Icon,
   trend,
+  tone = "default",
+  progress,
   className,
 }: {
   title: string;
@@ -15,8 +17,17 @@ export function StatCard({
   subtitle?: string;
   icon?: LucideIcon;
   trend?: string;
+  tone?: "default" | "warning" | "danger" | "success";
+  progress?: number;
   className?: string;
 }) {
+  const tones = {
+    default: { value: "text-navy-900", icon: "bg-navy-50 text-navy-800" },
+    warning: { value: "text-amber-800", icon: "bg-amber-50 text-amber-800" },
+    danger: { value: "text-danger-800", icon: "bg-danger-100 text-danger-800" },
+    success: { value: "text-emerald-800", icon: "bg-emerald-50 text-emerald-800" },
+  }[tone];
+
   return (
     <Card className={cn("overflow-hidden", className)}>
       <CardContent className="p-5">
@@ -25,7 +36,7 @@ export function StatCard({
             <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
               {title}
             </p>
-            <p className="mt-2 truncate text-2xl font-bold text-navy-900">
+            <p className={cn("mt-2 truncate text-2xl font-bold", tones.value)}>
               {value}
             </p>
             {subtitle ? (
@@ -34,9 +45,24 @@ export function StatCard({
             {trend ? (
               <p className="mt-1 text-xs font-medium text-emerald-600">{trend}</p>
             ) : null}
+            {progress != null ? (
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className={cn(
+                    "h-full rounded-full",
+                    tone === "danger"
+                      ? "bg-danger-700"
+                      : tone === "warning"
+                        ? "bg-amber-500"
+                        : "bg-navy-900",
+                  )}
+                  style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
+                />
+              </div>
+            ) : null}
           </div>
           {Icon ? (
-            <div className="rounded-lg bg-navy-50 p-2.5 text-navy-800">
+            <div className={cn("rounded-lg p-2.5", tones.icon)}>
               <Icon className="h-5 w-5" />
             </div>
           ) : null}

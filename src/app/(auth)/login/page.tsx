@@ -33,10 +33,7 @@ export default async function LoginPage({
           </CardHeader>
           <CardContent>
             <LoginForm callbackUrl={params.callbackUrl} />
-            <p className="mt-6 text-center text-xs text-slate-500">
-              Demo: admin@jkexpress.ug / Password123!
-            </p>
-            <p className="mt-2 text-center text-sm">
+            <p className="mt-6 text-center text-sm">
               <Link href="/" className="text-navy-800 hover:underline">
                 ← Back to website
               </Link>

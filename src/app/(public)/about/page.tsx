@@ -164,7 +164,7 @@ export default async function AboutPage() {
             {values.map((v) => (
               <Card key={v.title}>
                 <CardContent className="p-6">
-                  <v.icon className="h-6 w-6 text-gold-600" />
+                  <v.icon className="h-6 w-6 text-accent-500" />
                   <h3 className="mt-3 font-semibold text-navy-900">{v.title}</h3>
                   <p className="mt-2 text-sm text-slate-600">{v.text}</p>
                 </CardContent>
@@ -187,7 +187,7 @@ export default async function AboutPage() {
             </p>
             <ul className="mt-6 space-y-2 text-sm text-slate-600">
               <li className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-gold-600" />
+                <MapPin className="h-4 w-4 text-accent-500" />
                 {[company.address, company.city, company.country]
                   .filter(Boolean)
                   .join(", ")}

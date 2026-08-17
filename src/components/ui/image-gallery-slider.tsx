@@ -24,6 +24,8 @@ export function ImageGallerySlider({
 
   useEffect(() => {
     if (slides.length <= 1 || paused) return;
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (media.matches) return;
     const t = setInterval(() => {
       setIndex((i) => (i + 1) % slides.length);
     }, intervalMs);

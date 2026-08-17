@@ -3,7 +3,6 @@ import {
   ArrowRight,
   Building2,
   HandCoins,
-  MapPin,
   Search,
   Users,
 } from "lucide-react";
@@ -11,9 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
+import { PropertyCard } from "@/components/ui/property-card";
 import { db } from "@/lib/db";
-import { propertyCoverImage } from "@/lib/property-images";
-import { formatCurrency } from "@/lib/utils";
 
 export const metadata = {
   title: "Real Estate Services | JK Express",
@@ -22,24 +20,17 @@ export const metadata = {
 };
 
 export default async function RealEstateServicePage() {
-  let featured: Awaited<
-    ReturnType<
-      typeof db.property.findMany<{
-        include: { images: true };
-      }>
-    >
-  > = [];
-
-  try {
-    featured = await db.property.findMany({
+  const featured = await db.property
+    .findMany({
       where: { isPublished: true, deletedAt: null },
-      include: { images: { where: { isPrimary: true }, take: 1 } },
+      include: {
+        images: { where: { isPrimary: true }, take: 1 },
+        _count: { select: { images: true } },
+      },
       take: 3,
       orderBy: [{ isFeatured: "desc" }, { listedAt: "desc" }],
-    });
-  } catch {
-    featured = [];
-  }
+    })
+    .catch(() => []);
 
   const offerings = [
     {
@@ -127,50 +118,10 @@ export default async function RealEstateServicePage() {
             />
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {featured.map((p) => (
-                <Link key={p.id} href={`/properties/${p.slug}`}>
-                  <Card className="overflow-hidden transition hover:shadow-md">
-                    <div className="aspect-[16/10] bg-slate-200">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={propertyCoverImage(
-                          p.id,
-                          p.propertyType,
-                          p.images[0]?.url,
-                        )}
-                        alt={p.title}
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                    <CardContent className="p-4">
-                      <div className="mb-2 flex gap-2">
-                        <Badge
-                          variant={
-                            p.listingType === "SALE" ? "gold" : "default"
-                          }
-                        >
-                          {p.listingType === "SALE" ? "For sale" : "For rent"}
-                        </Badge>
-                        <Badge variant="secondary">{p.propertyType}</Badge>
-                      </div>
-                      <h3 className="font-semibold text-navy-900 line-clamp-1">
-                        {p.title}
-                      </h3>
-                      <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
-                        <MapPin className="h-3 w-3" />
-                        {[p.city, p.district].filter(Boolean).join(", ")}
-                      </p>
-                      <p className="mt-3 text-lg font-bold text-navy-900">
-                        {formatCurrency(Number(p.price), p.currency)}
-                        {p.listingType === "RENT" ? (
-                          <span className="text-sm font-normal text-slate-500">
-                            {" "}
-                            /mo
-                          </span>
-                        ) : null}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </Link>
+                <PropertyCard
+                  key={p.id}
+                  property={{ ...p, imageCount: p._count.images }}
+                />
               ))}
             </div>
           </div>

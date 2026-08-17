@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageHero } from "@/components/ui/page-hero";
 import { getCompanySettings } from "@/lib/company";
 import { db } from "@/lib/db";
 import { statusLabel } from "@/lib/utils";
@@ -14,12 +15,13 @@ export default async function CareersPage() {
   });
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
-      <h1 className="text-3xl font-bold text-navy-900">Careers</h1>
-      <p className="mt-2 text-slate-600">
-        Join {company.companyName}. Build careers in construction, real estate and property management.
-      </p>
-      <div className="mt-10 space-y-4">
+    <div>
+      <PageHero
+        eyebrow="Join the team"
+        title="Careers"
+        description={`Join ${company.companyName}. Build careers in construction, real estate and property management.`}
+      />
+      <div className="mx-auto max-w-4xl space-y-4 px-4 py-12 sm:px-6 lg:px-8">
         {jobs.map((job) => (
           <Card key={job.id}>
             <CardContent className="p-6">

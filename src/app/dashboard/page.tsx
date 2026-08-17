@@ -117,18 +117,39 @@ export default async function DashboardPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Active projects" value={activeProjects} icon={HardHat} subtitle={`${completedProjects} completed`} />
-        <StatCard title="Properties" value={totalProperties} icon={Building2} subtitle={`${availableProperties} available`} />
-        <StatCard title="Occupancy rate" value={`${occupancyRate}%`} icon={Percent} subtitle={`${occupiedUnits} occupied · ${vacantUnits} vacant`} />
+        <StatCard
+          title="Occupancy rate"
+          value={`${occupancyRate}%`}
+          icon={Percent}
+          subtitle={`${occupiedUnits} occupied · ${vacantUnits} vacant`}
+          tone={occupancyRate >= 80 ? "success" : occupancyRate < 60 ? "warning" : "default"}
+          progress={occupancyRate}
+        />
         <StatCard
           title="Outstanding rent"
           value={formatCurrency(Number(outstandingRent._sum.balance ?? 0))}
           icon={Wallet}
           subtitle={`Collected ${formatCurrency(Number(rentCollected._sum.amount ?? 0))}`}
+          tone={Number(outstandingRent._sum.balance ?? 0) > 0 ? "danger" : "success"}
         />
+        <StatCard
+          title="Open maintenance"
+          value={openMaintenance}
+          icon={Wrench}
+          tone={openMaintenance > 0 ? "warning" : "default"}
+        />
+        <StatCard
+          title="Expiring leases (90d)"
+          value={expiringLeases.length}
+          icon={FileWarning}
+          tone={expiringLeases.length > 0 ? "warning" : "default"}
+        />
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard title="Active projects" value={activeProjects} icon={HardHat} subtitle={`${completedProjects} completed`} />
+        <StatCard title="Properties" value={totalProperties} icon={Building2} subtitle={`${availableProperties} available`} />
         <StatCard title="Rent invoiced" value={formatCurrency(Number(rentInvoiced._sum.totalAmount ?? 0))} icon={Wallet} />
-        <StatCard title="Open maintenance" value={openMaintenance} icon={Wrench} />
-        <StatCard title="Expiring leases (90d)" value={expiringLeases.length} icon={FileWarning} />
         <StatCard title="Pending approvals" value={pendingApprovals} icon={Users} />
       </div>
 

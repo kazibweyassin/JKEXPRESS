@@ -14,7 +14,7 @@ export default async function PublicLayout({
   return (
     <>
       <PublicHeader companyName={company.companyName} />
-      <main className="flex-1 pb-20">{children}</main>
+      <main className="flex-1 pb-20 md:pb-0">{children}</main>
       <PublicFooter
         companyName={company.companyName}
         email={company.email ?? undefined}

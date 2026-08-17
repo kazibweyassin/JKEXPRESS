@@ -5,8 +5,12 @@ import { PublicLeadForm } from "@/components/forms/public-lead-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ImageGallerySlider } from "@/components/ui/image-gallery-slider";
+import { MapEmbed } from "@/components/ui/map-embed";
+import { PropertyCard } from "@/components/ui/property-card";
 import { getCompanySettings } from "@/lib/company";
 import { db } from "@/lib/db";
+import { getLocationStory } from "@/lib/location-stories";
 import { formatCurrency, statusLabel } from "@/lib/utils";
 import { propertyCoverImage } from "@/lib/property-images";
 import { whatsappLink } from "@/lib/whatsapp";
@@ -39,41 +43,64 @@ export default async function PropertyDetailPage({
 
   if (!property) notFound();
 
+  const cover = propertyCoverImage(
+    property.id,
+    property.propertyType,
+    property.images[0]?.url,
+  );
+  const gallery = property.images.length
+    ? property.images.map((image) => image.url)
+    : [cover];
+  const locationStory = getLocationStory(property.city, property.address);
+  const mapQuery = [property.address, property.city, property.district, property.country]
+    .filter(Boolean)
+    .join(", ");
+
+  const similar = await db.property.findMany({
+    where: {
+      isPublished: true,
+      deletedAt: null,
+      id: { not: property.id },
+      OR: [
+        ...(property.city ? [{ city: property.city }] : []),
+        { propertyType: property.propertyType },
+        { listingType: property.listingType },
+      ],
+    },
+    include: {
+      images: { where: { isPrimary: true }, take: 1 },
+      _count: { select: { images: true } },
+    },
+    take: 3,
+    orderBy: [{ isFeatured: "desc" }, { listedAt: "desc" }],
+  });
+
   const waLink = whatsappLink(
     company.whatsapp ?? company.phone,
     `Hello, I'm interested in ${property.title} (${property.reference})`,
   );
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <div className="mb-6">
         <Link href="/properties" className="text-sm text-navy-700 hover:underline">
           ← All properties
         </Link>
       </div>
       <div className="grid gap-10 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="aspect-[16/9] overflow-hidden rounded-xl bg-slate-200">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={propertyCoverImage(
-                property.id,
-                property.propertyType,
-                property.images[0]?.url,
-              )}
-              alt={property.title}
-              className="h-full w-full object-cover"
-            />
-          </div>
+        <div className="space-y-6 lg:col-span-2">
+          <ImageGallerySlider images={gallery} alt={property.title} />
           <div>
             <div className="mb-3 flex flex-wrap gap-2">
-              <Badge variant={property.listingType === "SALE" ? "gold" : "default"}>
+              <Badge variant={property.listingType === "SALE" ? "accent" : "default"}>
                 {property.listingType === "SALE" ? "For sale" : "For rent"}
               </Badge>
-              <Badge variant="secondary">{property.propertyType}</Badge>
+              <Badge variant="secondary">{statusLabel(property.propertyType)}</Badge>
               <Badge variant="outline">{statusLabel(property.status)}</Badge>
             </div>
-            <h1 className="text-3xl font-bold text-navy-900">{property.title}</h1>
+            <h1 className="font-serif text-3xl font-bold text-navy-900">
+              {property.title}
+            </h1>
             <p className="mt-2 flex items-center gap-1 text-slate-600">
               <MapPin className="h-4 w-4" />
               {[property.address, property.city, property.district, property.country]
@@ -113,7 +140,9 @@ export default async function PropertyDetailPage({
           {property.description ? (
             <div>
               <h2 className="text-lg font-semibold text-navy-900">Description</h2>
-              <p className="mt-2 whitespace-pre-wrap text-slate-600">{property.description}</p>
+              <p className="mt-2 whitespace-pre-wrap text-slate-600">
+                {property.description}
+              </p>
             </div>
           ) : null}
           {property.amenities.length > 0 ? (
@@ -128,9 +157,42 @@ export default async function PropertyDetailPage({
               </ul>
             </div>
           ) : null}
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent-500">
+              Neighbourhood
+            </p>
+            <h2 className="mt-2 text-lg font-semibold text-navy-900">
+              {locationStory.title}
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+              {locationStory.text}
+            </p>
+            <ul className="mt-4 flex flex-wrap gap-2">
+              {locationStory.highlights.map((item) => (
+                <li
+                  key={item}
+                  className="rounded-full bg-white px-3 py-1 text-xs font-medium text-navy-900 ring-1 ring-slate-200"
+                >
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h2 className="mb-3 text-lg font-semibold text-navy-900">Location</h2>
+            <MapEmbed
+              query={mapQuery}
+              latitude={property.latitude}
+              longitude={property.longitude}
+              title={`${property.title} map`}
+              className="h-72 w-full"
+            />
+          </div>
         </div>
-        <div className="space-y-4">
-          <Card>
+        <div className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+          <Card className="rounded-2xl">
             <CardHeader>
               <CardTitle className="text-base">Request information</CardTitle>
             </CardHeader>
@@ -156,9 +218,11 @@ export default async function PropertyDetailPage({
             </CardContent>
           </Card>
           {property.agent ? (
-            <Card>
+            <Card className="rounded-2xl">
               <CardContent className="p-5 text-sm">
-                <p className="text-xs uppercase tracking-wide text-slate-500">Assigned agent</p>
+                <p className="text-xs uppercase tracking-wide text-slate-500">
+                  Assigned agent
+                </p>
                 <p className="mt-1 font-semibold text-navy-900">{property.agent.name}</p>
                 {property.agent.email ? (
                   <p className="text-slate-600">{property.agent.email}</p>
@@ -171,6 +235,22 @@ export default async function PropertyDetailPage({
           ) : null}
         </div>
       </div>
+
+      {similar.length > 0 ? (
+        <section className="mt-16">
+          <h2 className="font-serif text-2xl font-bold text-navy-900">
+            Similar listings
+          </h2>
+          <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {similar.map((p) => (
+              <PropertyCard
+                key={p.id}
+                property={{ ...p, imageCount: p._count.images }}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

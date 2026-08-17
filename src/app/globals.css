@@ -19,11 +19,23 @@
   --navy-900: #002090;
   --navy-950: #001050;
 
-  /* Brand red (logo “E / X” + banner) */
-  --gold-100: #ffe5e5;
-  --gold-400: #ff4d4d;
-  --gold-500: #e80000;
-  --gold-900: #8f0000;
+  /* Brand red (logo “E / X” + banner). `gold-*` kept as aliases. */
+  --accent-100: #ffe5e5;
+  --accent-300: #ff8080;
+  --accent-400: #ff4d4d;
+  --accent-500: #e80000;
+  --accent-600: #c40000;
+  --accent-900: #8f0000;
+  --gold-100: var(--accent-100);
+  --gold-300: var(--accent-300);
+  --gold-400: var(--accent-400);
+  --gold-500: var(--accent-500);
+  --gold-600: var(--accent-600);
+  --gold-900: var(--accent-900);
+
+  --danger-100: #ffe4e6;
+  --danger-700: #be123c;
+  --danger-800: #9f1239;
 
   --brand-blue: #002090;
   --brand-red: #e80000;
@@ -31,6 +43,7 @@
   --brand-red-soft: #ffe5e5;
   --brand-primary: var(--brand-blue);
   --brand-accent: var(--brand-red);
+  --radius-card: 1rem;
 }
 
 @theme inline {
@@ -43,12 +56,24 @@
   --color-navy-900: var(--navy-900);
   --color-navy-950: var(--navy-950);
   --color-gold-100: var(--gold-100);
+  --color-gold-300: var(--gold-300);
   --color-gold-400: var(--gold-400);
   --color-gold-500: var(--gold-500);
+  --color-gold-600: var(--gold-600);
   --color-gold-900: var(--gold-900);
+  --color-accent-100: var(--accent-100);
+  --color-accent-300: var(--accent-300);
+  --color-accent-400: var(--accent-400);
+  --color-accent-500: var(--accent-500);
+  --color-accent-600: var(--accent-600);
+  --color-accent-900: var(--accent-900);
+  --color-danger-100: var(--danger-100);
+  --color-danger-700: var(--danger-700);
+  --color-danger-800: var(--danger-800);
   --color-brand-blue: var(--brand-blue);
   --color-brand-red: var(--brand-red);
   --font-sans: var(--font-geist-sans);
+  --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
   --font-mono: var(--font-geist-mono);
 }
 

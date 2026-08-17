@@ -106,6 +106,27 @@ a:not([class]) {
     linear-gradient(160deg, #001050 0%, var(--brand-primary) 45%, #001a6b 100%);
 }
 
+@keyframes hero-copy-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-copy-in {
+  animation: hero-copy-in 0.55s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-copy-in {
+    animation: none;
+  }
+}
+
 /* Print helpers for receipts/reports */
 @media print {
   .no-print {

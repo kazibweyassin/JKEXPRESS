@@ -90,19 +90,8 @@ export default async function HomePage() {
   return (
     <div>
       <section className="relative overflow-hidden text-white">
-        <HeroSlider background />
-        <div className="pointer-events-none relative z-10 mx-auto flex min-h-[540px] max-w-7xl flex-col justify-center px-4 pb-24 pt-20 sm:px-6 lg:px-8 lg:pb-28 lg:pt-24">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-400">
-            Construction · Real estate · Property management
-          </p>
-          <h1 className="mt-4 max-w-3xl font-serif text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-            Built spaces. Trusted assets. One team.
-          </h1>
-          <p className="mt-5 max-w-xl text-lg text-slate-200 sm:text-xl">
-            {company.description ??
-              "JK Express Realtors & Developers Ltd. delivers construction, brokerage and full-service property management across Uganda."}
-          </p>
-          <div className="pointer-events-auto mt-8 flex flex-wrap gap-3">
+        <HeroSlider background>
+          <div className="mt-8 flex flex-wrap gap-3">
             <Button variant="accent" size="lg" asChild>
               <Link href="/properties">
                 Browse properties <ArrowRight className="h-4 w-4" />
@@ -126,7 +115,7 @@ export default async function HomePage() {
               ))}
             </div>
           ) : null}
-        </div>
+        </HeroSlider>
       </section>
 
       <section className="border-b border-slate-200 bg-white">

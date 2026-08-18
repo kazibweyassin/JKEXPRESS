@@ -99,8 +99,8 @@ export default async function ConstructionServicePage() {
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button variant="gold" asChild>
-              <Link href="/request-quote">
-                Request a quotation <ArrowRight className="h-4 w-4" />
+              <Link href="/contact">
+                Talk to our team <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
             <Button
@@ -228,7 +228,7 @@ export default async function ConstructionServicePage() {
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Button variant="gold" asChild>
-              <Link href="/request-quote">Request a quotation</Link>
+              <Link href="/contact">Talk to our team</Link>
             </Button>
             <Button
               variant="outline"

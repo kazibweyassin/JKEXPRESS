@@ -80,14 +80,8 @@ export function PublicFooter({
           </div>
           <div className="flex flex-wrap gap-2">
             <Link
-              href="/request-quote"
-              className="inline-flex h-10 items-center rounded-md bg-[linear-gradient(135deg,_#e80000_0%,_#ff4d4d_100%)] px-5 text-sm font-semibold text-white transition hover:opacity-95"
-            >
-              Request a quote
-            </Link>
-            <Link
               href="/contact"
-              className="inline-flex h-10 items-center rounded-md border border-white/25 bg-white/5 px-5 text-sm font-medium text-white transition hover:bg-white/10"
+              className="inline-flex h-10 items-center rounded-md bg-[linear-gradient(135deg,_#e80000_0%,_#ff4d4d_100%)] px-5 text-sm font-semibold text-white transition hover:opacity-95"
             >
               Contact us
             </Link>

@@ -111,13 +111,6 @@ export default async function NewsArticlePage({
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
             <Button variant="gold" asChild>
-              <Link href="/request-quote">Request a quote</Link>
-            </Button>
-            <Button
-              variant="outline"
-              className="border-white/25 bg-white/5 text-white hover:bg-white/10 hover:text-white"
-              asChild
-            >
               <Link href="/contact">Contact us</Link>
             </Button>
           </div>

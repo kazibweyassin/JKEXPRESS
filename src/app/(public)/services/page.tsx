@@ -168,9 +168,6 @@ export default async function ServicesPage() {
           </div>
 
           <div className="mt-12 flex flex-wrap gap-3">
-            <Button variant="gold" asChild>
-              <Link href="/request-quote">Request a quotation</Link>
-            </Button>
             <Button variant="default" asChild>
               <Link href="/contact">Talk to our team</Link>
             </Button>

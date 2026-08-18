@@ -98,7 +98,7 @@ export default async function HomePage() {
               </Link>
             </Button>
             <Button variant="default" size="lg" asChild>
-              <Link href="/request-quote">Request a quote</Link>
+              <Link href="/contact">Contact us</Link>
             </Button>
           </div>
           {visibleStats.length > 0 ? (

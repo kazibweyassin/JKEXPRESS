@@ -134,7 +134,7 @@ export default async function ProjectDetailPage({
               className="border-white/25 bg-white/5 text-white hover:bg-white/10 hover:text-white"
               asChild
             >
-              <Link href="/request-quote">Request a quotation</Link>
+              <Link href="/contact">Contact us</Link>
             </Button>
             {waLink ? (
               <Button

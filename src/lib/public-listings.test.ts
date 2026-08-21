@@ -9,34 +9,41 @@ import {
 import { isLocalPublicPath } from "./site-photos";
 
 describe("local listing catalog", () => {
-  it("uses public site photos for property covers", () => {
+  it("uses Unsplash photos for finished property covers", () => {
     const cover = propertyCoverImage("kololo", "APARTMENT");
-    expect(isLocalPublicPath(cover)).toBe(true);
-    expect(cover.startsWith("/site-photos/")).toBe(true);
+    expect(cover.startsWith("https://images.unsplash.com/")).toBe(true);
+    expect(cover.includes("site-photos")).toBe(false);
   });
 
-  it("ignores remote stock photos and keeps local paths", () => {
+  it("keeps Unsplash photos and ignores construction site shots", () => {
     const remote =
-      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688";
-    const cover = propertyCoverImage("kololo", "APARTMENT", remote);
-    expect(cover.startsWith("/site-photos/")).toBe(true);
+      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80";
+    expect(propertyCoverImage("kololo", "APARTMENT", remote)).toBe(remote);
     expect(
-      propertyCoverImage("kololo", "APARTMENT", "/site-photos/site-04.jpeg"),
-    ).toBe("/site-photos/site-04.jpeg");
+      propertyCoverImage(
+        "kololo",
+        "APARTMENT",
+        "/site-photos/site-04.jpeg",
+      ).startsWith("https://images.unsplash.com/"),
+    ).toBe(true);
   });
 
-  it("builds a local photo gallery", () => {
-    const gallery = propertyGalleryImages("naguru", 4);
+  it("builds an Unsplash photo gallery for listings", () => {
+    const gallery = propertyGalleryImages("naguru", 4, [], "HOUSE");
     expect(gallery).toHaveLength(4);
-    expect(gallery.every((src) => src.startsWith("/site-photos/"))).toBe(true);
+    expect(
+      gallery.every((src) => src.startsWith("https://images.unsplash.com/")),
+    ).toBe(true);
   });
 
-  it("has published demo properties and projects with local images", () => {
+  it("uses Unsplash for properties and local site photos for projects", () => {
     expect(DEMO_PROPERTIES).toHaveLength(6);
     expect(DEMO_PROJECTS).toHaveLength(6);
     expect(
       DEMO_PROPERTIES.every((property) =>
-        property.images.every((image) => isLocalPublicPath(image.url)),
+        property.images.every((image) =>
+          image.url.startsWith("https://images.unsplash.com/"),
+        ),
       ),
     ).toBe(true);
     expect(

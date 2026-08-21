@@ -43,6 +43,7 @@ export default async function PropertyDetailPage({
     property.id,
     6,
     property.images.map((image) => image.url),
+    property.propertyType,
   );
   const locationStory = getLocationStory(property.city, property.address);
   const mapQuery = [property.address, property.city, property.district, property.country]

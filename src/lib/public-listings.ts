@@ -1,10 +1,10 @@
 /**
- * Public website listings from the local catalog (images in /public/site-photos).
- * Does not query Prisma — DATABASE_URL currently points at an unreachable
- * db.prisma.io host, and those calls crash the public pages.
+ * Public website listings from the local catalog.
+ * Properties use Unsplash photos of finished homes/commercial space.
+ * Projects use /public/site-photos construction photography.
  */
 
-import { SITE_PHOTOS } from "@/lib/site-photos";
+import { propertyGalleryImages } from "@/lib/property-images";
 
 export type PublicProperty = {
   id: string;
@@ -73,14 +73,7 @@ function amenity(propertyId: string, names: string[]) {
   return names.map((name, i) => ({ id: `${propertyId}-am-${i}`, name }));
 }
 
-function siteImages(start: number, count = 4) {
-  return Array.from({ length: count }, (_, i) => ({
-    url: SITE_PHOTOS[(start + i) % SITE_PHOTOS.length].src,
-  }));
-}
-
 function listing({
-  imageStart,
   amenityNames,
   agent,
   ...rest
@@ -96,11 +89,15 @@ function listing({
   | "imageCount"
   | "amenities"
 > & {
-  imageStart: number;
   amenityNames: string[];
   agent?: PublicProperty["agent"];
 }): PublicProperty {
-  const images = siteImages(imageStart);
+  const images = propertyGalleryImages(
+    rest.id,
+    4,
+    [],
+    rest.propertyType,
+  ).map((url) => ({ url }));
   return {
     country: "Uganda",
     currency: "UGX",
@@ -136,7 +133,6 @@ export const DEMO_PROPERTIES: PublicProperty[] = [
     landSize: null,
     isFeatured: true,
     listedAt: new Date("2025-11-01"),
-    imageStart: 3,
     amenityNames: ["Parking", "Security", "Generator", "Wi-Fi", "Balcony"],
   }),
   listing({
@@ -159,7 +155,6 @@ export const DEMO_PROPERTIES: PublicProperty[] = [
     landSize: 0.25,
     isFeatured: true,
     listedAt: new Date("2025-10-18"),
-    imageStart: 2,
     amenityNames: ["Garden", "Staff quarters", "Parking", "Water tank"],
   }),
   listing({
@@ -182,7 +177,6 @@ export const DEMO_PROPERTIES: PublicProperty[] = [
     landSize: 0.5,
     isFeatured: true,
     listedAt: new Date("2025-09-22"),
-    imageStart: 6,
     amenityNames: ["Lake view", "Garden", "Security", "Borehole"],
   }),
   listing({
@@ -204,7 +198,6 @@ export const DEMO_PROPERTIES: PublicProperty[] = [
     landSize: null,
     isFeatured: false,
     listedAt: new Date("2025-08-30"),
-    imageStart: 7,
     amenityNames: ["Parking", "Storage"],
   }),
   listing({
@@ -227,7 +220,6 @@ export const DEMO_PROPERTIES: PublicProperty[] = [
     landSize: 1.2,
     isFeatured: true,
     listedAt: new Date("2025-07-12"),
-    imageStart: 8,
     amenityNames: ["Road access", "Title available"],
   }),
   listing({
@@ -250,7 +242,6 @@ export const DEMO_PROPERTIES: PublicProperty[] = [
     landSize: null,
     isFeatured: true,
     listedAt: new Date("2025-11-20"),
-    imageStart: 1,
     amenityNames: ["Parking", "Security", "Backup power", "Water"],
   }),
 ];

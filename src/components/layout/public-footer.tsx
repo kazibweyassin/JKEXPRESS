@@ -96,7 +96,7 @@ export function PublicFooter({
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-12">
           <div className="lg:col-span-4">
             <Link href="/" aria-label={companyName} className="inline-block">
-              <Logo height={42} className="max-h-10" />
+              <Logo height={56} />
             </Link>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-slate-500">
               JK Express Realtors & Developers Ltd. delivers construction,

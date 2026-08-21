@@ -29,9 +29,9 @@ export function PublicHeader({ companyName = "JK Express" }: { companyName?: str
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur">
       <div className="brand-red-bar h-1 w-full" />
-      <div className="mx-auto flex h-[4.25rem] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-[4.75rem] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex min-w-0 items-center" aria-label={companyName}>
-          <Logo height={44} priority variant="full" className="max-h-11" />
+          <Logo height={56} priority variant="full" />
         </Link>
 
         <nav className="hidden items-center gap-0.5 xl:flex">

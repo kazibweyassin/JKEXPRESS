@@ -1,6 +1,9 @@
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
+/** Current wordmark in /public (new stacked logo — not the old /logo.png). */
+export const LOGO_SRC = "/logo.jpeg";
+
 type LogoProps = {
   className?: string;
   /** Image height in px (width auto) */
@@ -15,19 +18,22 @@ export function Logo({
   priority = false,
   variant = "full",
 }: LogoProps) {
-  // Original logo is very wide (~4:1). Compact is slightly shorter for tight headers.
-  const h = variant === "compact" ? Math.min(height, 36) : height;
-  const w = Math.round(h * 4.1);
+  const h = variant === "compact" ? Math.min(height, 40) : height;
+  const w = Math.round(h * 2.35);
 
   return (
     <Image
-      src="/logo.png"
+      src={LOGO_SRC}
       alt="JK Express Realtors & Developers Ltd."
       width={w}
       height={h}
       priority={priority}
       className={cn("h-auto w-auto object-contain object-left", className)}
-      style={{ height: h, width: "auto", maxWidth: variant === "compact" ? 180 : 240 }}
+      style={{
+        height: h,
+        width: "auto",
+        maxWidth: variant === "compact" ? 200 : 280,
+      }}
     />
   );
 }

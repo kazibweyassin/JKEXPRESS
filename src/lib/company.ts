@@ -8,7 +8,7 @@ export const BRAND = {
   fullName: "JK Express Realtors & Developers Ltd.",
   phone: "0704 776 059 | 0786 953 313",
   whatsapp: "+256704776059",
-  logoUrl: "/logo.png",
+  logoUrl: "/logo.jpeg",
 } as const;
 
 const fallbackSettings = {

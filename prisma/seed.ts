@@ -267,20 +267,14 @@ async function main() {
     },
   });
 
-  // Distinct listing photos (finished homes/commercial — not construction sites)
+  // Listing photos from /public/site-photos
   const PROPERTY_IMAGES: Record<string, string> = {
-    "kololo-executive-apartment":
-      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80",
-    "naguru-family-house":
-      "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80",
-    "entebbe-lakefront-villa":
-      "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=1200&q=80",
-    "wakiso-commercial-shop":
-      "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1200&q=80",
-    "jinja-riverside-plot":
-      "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80",
-    "bugolobi-serviced-apartments":
-      "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80",
+    "kololo-executive-apartment": "/site-photos/site-04.jpeg",
+    "naguru-family-house": "/site-photos/site-03.jpeg",
+    "entebbe-lakefront-villa": "/site-photos/site-07.jpeg",
+    "wakiso-commercial-shop": "/site-photos/site-08.jpeg",
+    "jinja-riverside-plot": "/site-photos/site-09.jpeg",
+    "bugolobi-serviced-apartments": "/site-photos/site-02.jpeg",
   };
 
   // Properties across Uganda cities
@@ -411,9 +405,7 @@ async function main() {
   const properties = [];
   for (const def of propertyDefs) {
     const { amenities, ...data } = def;
-    const imageUrl =
-      PROPERTY_IMAGES[data.slug] ??
-      "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80";
+    const imageUrl = PROPERTY_IMAGES[data.slug] ?? "/site-photos/site-01.jpeg";
     const prop = await db.property.upsert({
       where: { reference: data.reference },
       update: {

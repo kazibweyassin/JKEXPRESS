@@ -13,73 +13,43 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PropertyCard } from "@/components/ui/property-card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { db } from "@/lib/db";
 import { formatDate } from "@/lib/utils";
 import { getCompanySettings } from "@/lib/company";
-import { safeQuery } from "@/lib/safe-query";
+import {
+  getFeaturedProperties,
+  getPublicStats,
+  listPublishedProjects,
+} from "@/lib/public-listings";
 import { projectCoverImage } from "@/lib/site-photos";
 import HeroSlider from "@/components/ui/hero-slider";
 
 export default async function HomePage() {
   const company = await getCompanySettings();
 
-  const [featuredProperties, projects, testimonials, news, stats] =
-    await Promise.all([
-      safeQuery(
-        () =>
-          db.property.findMany({
-            where: { isPublished: true, isFeatured: true, deletedAt: null },
-            include: {
-              images: { where: { isPrimary: true }, take: 1 },
-              _count: { select: { images: true } },
-            },
-            take: 6,
-            orderBy: { listedAt: "desc" },
-          }),
-        [],
-      ),
-      safeQuery(
-        () =>
-          db.constructionProject.findMany({
-            where: { isPublished: true, deletedAt: null },
-            take: 6,
-            orderBy: { updatedAt: "desc" },
-          }),
-        [],
-      ),
-      safeQuery(
-        () =>
-          db.testimonial.findMany({
-            where: { isActive: true },
-            orderBy: { sortOrder: "asc" },
-            take: 3,
-          }),
-        [],
-      ),
-      safeQuery(
-        () =>
-          db.newsArticle.findMany({
-            where: { isPublished: true },
-            orderBy: { publishedAt: "desc" },
-            take: 3,
-          }),
-        [],
-      ),
-      Promise.all([
-        safeQuery(
-          () => db.property.count({ where: { isPublished: true, deletedAt: null } }),
-          0,
-        ),
-        safeQuery(
-          () => db.constructionProject.count({ where: { status: "COMPLETED" } }),
-          0,
-        ),
-        safeQuery(() => db.unit.count({ where: { status: "OCCUPIED" } }), 0),
-        safeQuery(() => db.lease.count({ where: { status: "ACTIVE" } }), 0),
-      ]),
-    ]);
+  const [featuredProperties, projects, stats] = await Promise.all([
+    getFeaturedProperties(6),
+    listPublishedProjects(),
+    getPublicStats(),
+  ]);
+  const testimonials: Array<{
+    id: string;
+    rating: number;
+    content: string;
+    name: string;
+    role: string | null;
+    company: string | null;
+  }> = [];
+  const news: Array<{
+    id: string;
+    slug: string;
+    title: string;
+    excerpt: string | null;
+    coverImage: string | null;
+    publishedAt: Date | null;
+  }> = [];
 
-  const [propertyCount, completedProjects, occupiedUnits, activeLeases] = stats;
+  const { propertyCount, completedProjects, occupiedUnits, activeLeases } =
+    stats;
   const visibleStats = [
     { label: "Properties", value: propertyCount },
     { label: "Completed projects", value: completedProjects },
@@ -193,10 +163,7 @@ export default async function HomePage() {
           {featuredProperties.length > 0 ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {featuredProperties.map((p) => (
-                <PropertyCard
-                  key={p.id}
-                  property={{ ...p, imageCount: p._count.images }}
-                />
+                <PropertyCard key={p.id} property={p} />
               ))}
             </div>
           ) : (
@@ -226,7 +193,7 @@ export default async function HomePage() {
         </div>
         {projects.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {projects.map((project) => (
+            {projects.slice(0, 6).map((project) => (
               <Link key={project.id} href={`/projects/${project.slug}`}>
                 <Card className="overflow-hidden rounded-2xl transition hover:shadow-md">
                   <div className="relative aspect-[16/10] bg-slate-200">

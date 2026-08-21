@@ -3,6 +3,7 @@ import Image from "next/image";
 import { ArrowRight, Newspaper } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { formatDate } from "@/lib/utils";
 
 export const metadata = {
@@ -14,15 +15,14 @@ export const metadata = {
 const FALLBACK_COVER = "/site-photos/site-01.jpeg";
 
 export default async function NewsPage() {
-  let articles: Awaited<ReturnType<typeof db.newsArticle.findMany>> = [];
-  try {
-    articles = await db.newsArticle.findMany({
-      where: { isPublished: true },
-      orderBy: { publishedAt: "desc" },
-    });
-  } catch {
-    articles = [];
-  }
+  const articles = await safeQuery(
+    () =>
+      db.newsArticle.findMany({
+        where: { isPublished: true },
+        orderBy: { publishedAt: "desc" },
+      }),
+    [],
+  );
 
   const [featured, ...rest] = articles;
 

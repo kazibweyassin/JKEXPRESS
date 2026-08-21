@@ -38,17 +38,26 @@ export const HERO_SITE_PHOTOS: SitePhoto[] = [
 /** Photos for construction service + about galleries. */
 export const GALLERY_SITE_PHOTOS: SitePhoto[] = SITE_PHOTOS;
 
-/** Stable cover image for a project when no featuredImage is stored. */
-export function projectCoverImage(
-  key: string,
-  featuredImage?: string | null,
-): string {
-  if (featuredImage) return featuredImage;
+/** True for files served from /public (e.g. /site-photos/site-01.jpeg). */
+export function isLocalPublicPath(url?: string | null): boolean {
+  return Boolean(url && url.startsWith("/") && !url.startsWith("//"));
+}
+
+function hashKey(key: string): number {
   let hash = 0;
   for (let i = 0; i < key.length; i++) {
     hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
   }
-  return SITE_PHOTOS[hash % SITE_PHOTOS.length].src;
+  return hash;
+}
+
+/** Stable cover image for a project when no local featured image is stored. */
+export function projectCoverImage(
+  key: string,
+  featuredImage?: string | null,
+): string {
+  if (isLocalPublicPath(featuredImage)) return featuredImage as string;
+  return SITE_PHOTOS[hashKey(key) % SITE_PHOTOS.length].src;
 }
 
 /** A few photos for a project detail gallery (deterministic by key). */
@@ -63,7 +72,7 @@ export function projectGalleryImages(
   }
   const start = hash % SITE_PHOTOS.length;
   const urls: string[] = [];
-  if (featuredImage) urls.push(featuredImage);
+  if (isLocalPublicPath(featuredImage)) urls.push(featuredImage as string);
   for (let i = 0; i < SITE_PHOTOS.length && urls.length < count; i++) {
     const src = SITE_PHOTOS[(start + i) % SITE_PHOTOS.length].src;
     if (!urls.includes(src)) urls.push(src);

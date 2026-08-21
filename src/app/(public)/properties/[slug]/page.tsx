@@ -9,11 +9,13 @@ import { ImageGallerySlider } from "@/components/ui/image-gallery-slider";
 import { MapEmbed } from "@/components/ui/map-embed";
 import { PropertyCard } from "@/components/ui/property-card";
 import { getCompanySettings } from "@/lib/company";
-import { db } from "@/lib/db";
-import { safeQuery } from "@/lib/safe-query";
 import { getLocationStory } from "@/lib/location-stories";
+import {
+  getPropertyBySlug,
+  getSimilarProperties,
+} from "@/lib/public-listings";
 import { formatCurrency, statusLabel } from "@/lib/utils";
-import { propertyCoverImage } from "@/lib/property-images";
+import { propertyGalleryImages } from "@/lib/property-images";
 import { whatsappLink } from "@/lib/whatsapp";
 
 export async function generateMetadata({
@@ -22,10 +24,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const property = await safeQuery(
-    () => db.property.findUnique({ where: { slug } }),
-    null,
-  );
+  const property = await getPropertyBySlug(slug);
   return { title: property?.title ?? "Property" };
 }
 
@@ -36,56 +35,21 @@ export default async function PropertyDetailPage({
 }) {
   const { slug } = await params;
   const company = await getCompanySettings();
-  const property = await safeQuery(
-    () =>
-      db.property.findFirst({
-        where: { slug, isPublished: true, deletedAt: null },
-        include: {
-          images: { orderBy: { sortOrder: "asc" } },
-          amenities: true,
-          agent: true,
-        },
-      }),
-    null,
-  );
+  const property = await getPropertyBySlug(slug);
 
   if (!property) notFound();
 
-  const cover = propertyCoverImage(
+  const gallery = propertyGalleryImages(
     property.id,
-    property.propertyType,
-    property.images[0]?.url,
+    6,
+    property.images.map((image) => image.url),
   );
-  const gallery = property.images.length
-    ? property.images.map((image) => image.url)
-    : [cover];
   const locationStory = getLocationStory(property.city, property.address);
   const mapQuery = [property.address, property.city, property.district, property.country]
     .filter(Boolean)
     .join(", ");
 
-  const similar = await safeQuery(
-    () =>
-      db.property.findMany({
-        where: {
-          isPublished: true,
-          deletedAt: null,
-          id: { not: property.id },
-          OR: [
-            ...(property.city ? [{ city: property.city }] : []),
-            { propertyType: property.propertyType },
-            { listingType: property.listingType },
-          ],
-        },
-        include: {
-          images: { where: { isPrimary: true }, take: 1 },
-          _count: { select: { images: true } },
-        },
-        take: 3,
-        orderBy: [{ isFeatured: "desc" }, { listedAt: "desc" }],
-      }),
-    [],
-  );
+  const similar = await getSimilarProperties(property, 3);
 
   const waLink = whatsappLink(
     company.whatsapp ?? company.phone,
@@ -255,10 +219,7 @@ export default async function PropertyDetailPage({
           </h2>
           <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {similar.map((p) => (
-              <PropertyCard
-                key={p.id}
-                property={{ ...p, imageCount: p._count.images }}
-              />
+              <PropertyCard key={p.id} property={p} />
             ))}
           </div>
         </section>

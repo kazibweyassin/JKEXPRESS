@@ -1,4 +1,5 @@
-import { db } from "@/lib/db";
+import { shouldSkipDatabase } from "@/lib/db-available";
+import { safeQuery } from "@/lib/safe-query";
 
 export const BRAND = {
   primaryColor: "#002090",
@@ -33,12 +34,14 @@ const fallbackSettings = {
 };
 
 export async function getCompanySettings() {
-  try {
-    const settings = await db.companySetting.findFirst({
-      orderBy: { updatedAt: "desc" },
-    });
-    return settings ?? fallbackSettings;
-  } catch {
-    return fallbackSettings;
-  }
+  if (shouldSkipDatabase()) return fallbackSettings;
+  const { db } = await import("@/lib/db");
+  const settings = await safeQuery(
+    () =>
+      db.companySetting.findFirst({
+        orderBy: { updatedAt: "desc" },
+      }),
+    null,
+  );
+  return settings ?? fallbackSettings;
 }

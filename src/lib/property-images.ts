@@ -1,38 +1,11 @@
 /**
- * Distinct fallback listing photos by property type / stable key.
- * Used when a property has no primary image in the database.
+ * Listing photos from /public/site-photos.
+ * Used when a property has no local primary image in the database.
  */
 
-const BY_TYPE: Record<string, string[]> = {
-  APARTMENT: [
-    "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80",
-  ],
-  HOUSE: [
-    "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
-  ],
-  COMMERCIAL: [
-    "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80",
-  ],
-  OFFICE: [
-    "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1200&q=80",
-  ],
-  LAND: [
-    "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80",
-  ],
-  WAREHOUSE: [
-    "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1200&q=80",
-  ],
-};
+import { SITE_PHOTOS, isLocalPublicPath } from "./site-photos";
 
-const DEFAULT_IMAGE =
-  "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80";
+const DEFAULT_IMAGE = SITE_PHOTOS[0].src;
 
 function hashKey(key: string): number {
   let hash = 0;
@@ -42,13 +15,32 @@ function hashKey(key: string): number {
   return hash;
 }
 
-/** Prefer DB primary image; otherwise pick a type-aware, stable fallback. */
+/** Prefer a local public image; otherwise pick a stable site photo. */
 export function propertyCoverImage(
   key: string,
-  propertyType?: string | null,
+  _propertyType?: string | null,
   primaryUrl?: string | null,
 ): string {
-  if (primaryUrl) return primaryUrl;
-  const pool = BY_TYPE[propertyType ?? ""] ?? [DEFAULT_IMAGE];
-  return pool[hashKey(key) % pool.length] ?? DEFAULT_IMAGE;
+  if (isLocalPublicPath(primaryUrl)) return primaryUrl as string;
+  return SITE_PHOTOS[hashKey(key) % SITE_PHOTOS.length]?.src ?? DEFAULT_IMAGE;
+}
+
+/** Gallery of local site photos, optionally starting with stored public URLs. */
+export function propertyGalleryImages(
+  key: string,
+  count = 6,
+  storedUrls: Array<string | null | undefined> = [],
+): string[] {
+  const urls: string[] = [];
+  for (const url of storedUrls) {
+    if (isLocalPublicPath(url) && !urls.includes(url as string)) {
+      urls.push(url as string);
+    }
+  }
+  const start = hashKey(key) % SITE_PHOTOS.length;
+  for (let i = 0; i < SITE_PHOTOS.length && urls.length < count; i++) {
+    const src = SITE_PHOTOS[(start + i) % SITE_PHOTOS.length].src;
+    if (!urls.includes(src)) urls.push(src);
+  }
+  return urls.length ? urls : [DEFAULT_IMAGE];
 }

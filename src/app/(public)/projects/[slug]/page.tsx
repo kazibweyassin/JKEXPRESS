@@ -17,9 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ImageGallerySlider } from "@/components/ui/image-gallery-slider";
 import { getCompanySettings } from "@/lib/company";
-import { db } from "@/lib/db";
-import { safeQuery } from "@/lib/safe-query";
 import { getLocationStory } from "@/lib/location-stories";
+import { getProjectBySlug } from "@/lib/public-listings";
 import { projectGalleryImages } from "@/lib/site-photos";
 import { formatCurrency, formatDate, statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
@@ -31,10 +30,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const project = await safeQuery(
-    () => db.constructionProject.findUnique({ where: { slug } }),
-    null,
-  );
+  const project = await getProjectBySlug(slug);
   return {
     title: project?.name ?? "Project",
     description: project?.description ?? undefined,
@@ -48,17 +44,7 @@ export default async function ProjectDetailPage({
 }) {
   const { slug } = await params;
   const company = await getCompanySettings();
-  const project = await safeQuery(
-    () =>
-      db.constructionProject.findFirst({
-        where: { slug, isPublished: true, deletedAt: null },
-        include: {
-          milestones: { orderBy: { dueDate: "asc" } },
-          phases: { orderBy: { sortOrder: "asc" } },
-        },
-      }),
-    null,
-  );
+  const project = await getProjectBySlug(slug);
   if (!project) notFound();
 
   const gallery = projectGalleryImages(project.id, 8, project.featuredImage);

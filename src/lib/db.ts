@@ -20,10 +20,9 @@ export const db =
   globalForPrisma.prisma ??
   new PrismaClient({
     datasources: { db: { url: databaseUrl } },
-    log:
-      process.env.NODE_ENV === "development"
-        ? ["error", "warn"]
-        : ["error"],
+    // Prisma's own console.error of connection failures is treated as a
+    // Next.js overlay ("Console PrismaClientInitializationError").
+    log: [],
   });
 
 if (process.env.NODE_ENV !== "production") {

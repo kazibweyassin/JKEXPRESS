@@ -1,8 +1,7 @@
 import { PublicLeadForm } from "@/components/forms/public-lead-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHero } from "@/components/ui/page-hero";
-import { db } from "@/lib/db";
-import { safeQuery } from "@/lib/safe-query";
+import { getPropertyById } from "@/lib/public-listings";
 
 export const metadata = { title: "Schedule a Property Viewing" };
 
@@ -12,12 +11,7 @@ export default async function BookViewingPage({
   searchParams: Promise<{ propertyId?: string }>;
 }) {
   const { propertyId } = await searchParams;
-  const property = propertyId
-    ? await safeQuery(
-        () => db.property.findUnique({ where: { id: propertyId } }),
-        null,
-      )
-    : null;
+  const property = propertyId ? await getPropertyById(propertyId) : null;
 
   return (
     <div>

@@ -6,8 +6,7 @@ import { Input } from "@/components/ui/input";
 import { PageHero } from "@/components/ui/page-hero";
 import { PropertyCard } from "@/components/ui/property-card";
 import { Select } from "@/components/ui/select";
-import { db } from "@/lib/db";
-import { safeQuery } from "@/lib/safe-query";
+import { listPublishedProperties } from "@/lib/public-listings";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Properties" };
@@ -26,34 +25,13 @@ export default async function PropertiesPage({
   const params = await searchParams;
   const bedrooms = params.bedrooms ? Number(params.bedrooms) : undefined;
 
-  const properties = await safeQuery(
-    () =>
-      db.property.findMany({
-        where: {
-          isPublished: true,
-          deletedAt: null,
-          ...(params.listingType ? { listingType: params.listingType } : {}),
-          ...(params.city ? { city: { contains: params.city } } : {}),
-          ...(params.propertyType ? { propertyType: params.propertyType } : {}),
-          ...(bedrooms ? { bedrooms: { gte: bedrooms } } : {}),
-          ...(params.q
-            ? {
-                OR: [
-                  { title: { contains: params.q } },
-                  { description: { contains: params.q } },
-                  { address: { contains: params.q } },
-                ],
-              }
-            : {}),
-        },
-        include: {
-          images: { where: { isPrimary: true }, take: 1 },
-          _count: { select: { images: true } },
-        },
-        orderBy: [{ isFeatured: "desc" }, { listedAt: "desc" }],
-      }),
-    [],
-  );
+  const properties = await listPublishedProperties({
+    listingType: params.listingType,
+    city: params.city,
+    propertyType: params.propertyType,
+    bedrooms,
+    q: params.q,
+  });
 
   const chipClass = (active: boolean) =>
     cn(
@@ -131,10 +109,7 @@ export default async function PropertiesPage({
         {properties.length > 0 ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {properties.map((p) => (
-              <PropertyCard
-                key={p.id}
-                property={{ ...p, imageCount: p._count.images }}
-              />
+              <PropertyCard key={p.id} property={p} />
             ))}
           </div>
         ) : (

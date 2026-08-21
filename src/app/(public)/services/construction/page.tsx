@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { SitePhotoGallery } from "@/components/ui/site-photo-gallery";
-import { db } from "@/lib/db";
+import { listPublishedProjects } from "@/lib/public-listings";
 import { GALLERY_SITE_PHOTOS, projectCoverImage } from "@/lib/site-photos";
 import { statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
@@ -25,40 +25,7 @@ export const metadata = {
 };
 
 export default async function ConstructionServicePage() {
-  let projects: Awaited<
-    ReturnType<
-      typeof db.constructionProject.findMany<{
-        select: {
-          id: true;
-          slug: true;
-          name: true;
-          city: true;
-          status: true;
-          completionPercentage: true;
-          featuredImage: true;
-        };
-      }>
-    >
-  > = [];
-
-  try {
-    projects = await db.constructionProject.findMany({
-      where: { isPublished: true, deletedAt: null },
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        city: true,
-        status: true,
-        completionPercentage: true,
-        featuredImage: true,
-      },
-      take: 4,
-      orderBy: { updatedAt: "desc" },
-    });
-  } catch {
-    projects = [];
-  }
+  const projects = (await listPublishedProjects()).slice(0, 4);
 
   const capabilities = [
     {

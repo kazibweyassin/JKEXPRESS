@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { getCompanySettings } from "@/lib/company";
-import { db } from "@/lib/db";
+import { getPublicStats } from "@/lib/public-listings";
 import { SITE_PHOTOS } from "@/lib/site-photos";
 
 export const metadata = {
@@ -26,21 +26,8 @@ export const metadata = {
 export default async function AboutPage() {
   const company = await getCompanySettings();
 
-  let propertyCount = 0;
-  let completedProjects = 0;
-  let activeLeases = 0;
-
-  try {
-    [propertyCount, completedProjects, activeLeases] = await Promise.all([
-      db.property.count({ where: { isPublished: true, deletedAt: null } }),
-      db.constructionProject.count({
-        where: { status: "COMPLETED", deletedAt: null },
-      }),
-      db.lease.count({ where: { status: "ACTIVE" } }),
-    ]);
-  } catch {
-    // DB unavailable — show defaults
-  }
+  const { propertyCount, completedProjects, activeLeases } =
+    await getPublicStats();
 
   const pillars = [
     {

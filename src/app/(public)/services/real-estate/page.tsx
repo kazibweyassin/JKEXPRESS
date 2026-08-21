@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { PropertyCard } from "@/components/ui/property-card";
-import { db } from "@/lib/db";
+import { getFeaturedProperties } from "@/lib/public-listings";
 
 export const metadata = {
   title: "Real Estate Services | JK Express",
@@ -20,17 +20,7 @@ export const metadata = {
 };
 
 export default async function RealEstateServicePage() {
-  const featured = await db.property
-    .findMany({
-      where: { isPublished: true, deletedAt: null },
-      include: {
-        images: { where: { isPrimary: true }, take: 1 },
-        _count: { select: { images: true } },
-      },
-      take: 3,
-      orderBy: [{ isFeatured: "desc" }, { listedAt: "desc" }],
-    })
-    .catch(() => []);
+  const featured = await getFeaturedProperties(3);
 
   const offerings = [
     {
@@ -118,10 +108,7 @@ export default async function RealEstateServicePage() {
             />
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {featured.map((p) => (
-                <PropertyCard
-                  key={p.id}
-                  property={{ ...p, imageCount: p._count.images }}
-                />
+                <PropertyCard key={p.id} property={p} />
               ))}
             </div>
           </div>

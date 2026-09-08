@@ -27,11 +27,59 @@ import { statusVariant } from "@/lib/status";
 
 export const metadata = { title: "Dashboard" };
 
+function fetchDashboardData(now: Date, in90: Date) {
+  return Promise.all([
+    db.constructionProject.count({ where: { status: "ACTIVE", deletedAt: null } }),
+    db.constructionProject.count({ where: { status: "COMPLETED", deletedAt: null } }),
+    db.property.count({ where: { deletedAt: null } }),
+    db.property.count({ where: { status: "AVAILABLE", deletedAt: null } }),
+    db.unit.count({ where: { status: "OCCUPIED", deletedAt: null } }),
+    db.unit.count({ where: { status: "VACANT", deletedAt: null } }),
+    db.invoice.aggregate({ _sum: { totalAmount: true }, where: { type: "RENT", deletedAt: null } }),
+    db.payment.aggregate({ _sum: { amount: true }, where: { status: "COMPLETED", deletedAt: null } }),
+    db.invoice.aggregate({
+      _sum: { balance: true },
+      where: { deletedAt: null, status: { in: ["PENDING", "PARTIAL", "OVERDUE"] } },
+    }),
+    db.maintenanceTicket.count({
+      where: { status: { notIn: ["CLOSED", "CANCELLED", "COMPLETED"] }, deletedAt: null },
+    }),
+    db.lease.findMany({
+      where: { status: { in: ["ACTIVE", "EXPIRING"] }, endDate: { lte: in90, gte: now }, deletedAt: null },
+      include: { tenant: true, unit: true, property: true },
+      take: 5,
+      orderBy: { endDate: "asc" },
+    }),
+    db.purchaseRequest.count({ where: { status: { in: ["SUBMITTED", "PENDING_APPROVAL", "PM_REVIEW"] } } }),
+    db.lead.findMany({ where: { deletedAt: null }, orderBy: { createdAt: "desc" }, take: 5 }),
+    db.auditLog.findMany({ orderBy: { createdAt: "desc" }, take: 8, include: { user: true } }),
+  ]);
+}
+
+type DashboardData = Awaited<ReturnType<typeof fetchDashboardData>>;
+
+const EMPTY_DASHBOARD_DATA = [
+  0, 0, 0, 0, 0, 0,
+  { _sum: { totalAmount: null } },
+  { _sum: { amount: null } },
+  { _sum: { balance: null } },
+  0, [], 0, [], [],
+] as unknown as DashboardData;
+
 export default async function DashboardPage() {
   await requirePagePermission("dashboard");
 
   const now = new Date();
   const in90 = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+
+  let databaseOffline = false;
+  let dashboardData: DashboardData;
+  try {
+    dashboardData = await fetchDashboardData(now, in90);
+  } catch {
+    databaseOffline = true;
+    dashboardData = EMPTY_DASHBOARD_DATA;
+  }
 
   const [
     activeProjects,
@@ -48,62 +96,7 @@ export default async function DashboardPage() {
     pendingApprovals,
     recentLeads,
     recentActivities,
-  ] = await Promise.all([
-    db.constructionProject.count({ where: { status: "ACTIVE", deletedAt: null } }),
-    db.constructionProject.count({ where: { status: "COMPLETED", deletedAt: null } }),
-    db.property.count({ where: { deletedAt: null } }),
-    db.property.count({ where: { status: "AVAILABLE", deletedAt: null } }),
-    db.unit.count({ where: { status: "OCCUPIED", deletedAt: null } }),
-    db.unit.count({ where: { status: "VACANT", deletedAt: null } }),
-    db.invoice.aggregate({
-      _sum: { totalAmount: true },
-      where: { type: "RENT", deletedAt: null },
-    }),
-    db.payment.aggregate({
-      _sum: { amount: true },
-      where: { status: "COMPLETED", deletedAt: null },
-    }),
-    db.invoice.aggregate({
-      _sum: { balance: true },
-      where: {
-        deletedAt: null,
-        status: { in: ["PENDING", "PARTIAL", "OVERDUE"] },
-      },
-    }),
-    db.maintenanceTicket.count({
-      where: {
-        status: { notIn: ["CLOSED", "CANCELLED", "COMPLETED"] },
-        deletedAt: null,
-      },
-    }),
-    db.lease.findMany({
-      where: {
-        status: { in: ["ACTIVE", "EXPIRING"] },
-        endDate: { lte: in90, gte: now },
-        deletedAt: null,
-      },
-      include: {
-        tenant: true,
-        unit: true,
-        property: true,
-      },
-      take: 5,
-      orderBy: { endDate: "asc" },
-    }),
-    db.purchaseRequest.count({
-      where: { status: { in: ["SUBMITTED", "PENDING_APPROVAL", "PM_REVIEW"] } },
-    }),
-    db.lead.findMany({
-      where: { deletedAt: null },
-      orderBy: { createdAt: "desc" },
-      take: 5,
-    }),
-    db.auditLog.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 8,
-      include: { user: true },
-    }),
-  ]);
+  ] = dashboardData;
 
   const totalUnits = occupiedUnits + vacantUnits;
   const occupancyRate =
@@ -113,8 +106,15 @@ export default async function DashboardPage() {
     <div>
       <PageHeader
         title="Executive overview"
-        description="Live metrics from construction, real estate and property operations."
+        description={databaseOffline ? "Dashboard is available, but live database metrics are temporarily offline." : "Live metrics from construction, real estate and property operations."}
       />
+
+      {databaseOffline ? (
+        <div className="mb-6 flex gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950" role="status">
+          <FileWarning className="mt-0.5 h-5 w-5 shrink-0" />
+          <div><p className="font-semibold">Database connection unavailable</p><p className="mt-1 text-amber-800">Live totals and recent records are showing as empty. They will return automatically when Postgres is reachable again.</p></div>
+        </div>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard

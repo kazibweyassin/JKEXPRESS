@@ -14,19 +14,21 @@ import { db } from "@/lib/db";
 import { formatDate, statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
 import { ShoppingCart } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PurchaseRequestForm } from "@/components/forms/construction-forms";
 
 export const metadata = { title: "Procurement" };
 
 export default async function ProcurementPage() {
   await requirePagePermission("procurement");
-  const requests = await db.purchaseRequest.findMany({
+  const [requests, projects] = await Promise.all([db.purchaseRequest.findMany({
     include: {
       requester: true,
       project: true,
       items: true,
     },
     orderBy: { createdAt: "desc" },
-  });
+  }), db.constructionProject.findMany({ where: { deletedAt: null }, select: { id: true, code: true, name: true }, orderBy: { name: "asc" } })]);
 
   return (
     <div>
@@ -34,6 +36,10 @@ export default async function ProcurementPage() {
         title="Procurement"
         description="Purchase requests and approval workflow."
       />
+      <Card className="mb-6">
+        <CardHeader><CardTitle className="text-base">New purchase request</CardTitle></CardHeader>
+        <CardContent><PurchaseRequestForm projects={projects.map((p) => ({ id: p.id, label: `${p.code} — ${p.name}` }))} /></CardContent>
+      </Card>
       {requests.length === 0 ? (
         <EmptyState
           icon={ShoppingCart}

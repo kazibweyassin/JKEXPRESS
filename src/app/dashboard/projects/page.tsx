@@ -37,7 +37,8 @@ export default async function ProjectsPage() {
     <div>
       <PageHeader
         title="Construction projects"
-        description="Active and completed construction work."
+        description="Projects, company team, subcontract packages, financials and weekly FIDIC progress."
+        actions={<Link href="/dashboard/projects/new" className="rounded-md bg-navy-900 px-4 py-2 text-sm font-medium text-white hover:bg-navy-800">New project</Link>}
       />
 
       {projects.length === 0 ? (

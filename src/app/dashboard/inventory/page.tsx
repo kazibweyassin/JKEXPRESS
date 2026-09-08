@@ -8,26 +8,52 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { IssueStockForm } from "@/components/forms/construction-forms";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { formatCurrency, statusLabel } from "@/lib/utils";
 
-export const metadata = { title: "Inventory" };
+export const metadata = { title: "Stores & materials" };
 
 export default async function InventoryPage() {
   await requirePagePermission("inventory");
-  const items = await db.inventoryItem.findMany({
-    where: { deletedAt: null },
-    include: { warehouse: true },
-    orderBy: { name: "asc" },
-  });
+  const [items, projects] = await Promise.all([
+    db.inventoryItem.findMany({
+      where: { deletedAt: null },
+      include: { warehouse: true },
+      orderBy: { name: "asc" },
+    }),
+    db.constructionProject.findMany({
+      where: { deletedAt: null },
+      select: { id: true, name: true, code: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
   return (
     <div>
       <PageHeader
-        title="Inventory"
-        description="Materials, tools and stock levels across warehouses."
+        title="Stores & materials"
+        description="Company stores only. Issue stock to a construction project; subcontractor materials stay off this register."
       />
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-base">Issue to site</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <IssueStockForm
+            items={items.map((item) => ({
+              id: item.id,
+              label: `${item.sku} — ${item.name} (${Number(item.quantityOnHand)} ${item.unit})`,
+            }))}
+            projects={projects.map((p) => ({
+              id: p.id,
+              label: `${p.code} — ${p.name}`,
+            }))}
+          />
+        </CardContent>
+      </Card>
       <div className="rounded-xl border border-slate-200 bg-white">
         <Table>
           <TableHeader>

@@ -10,16 +10,23 @@ export default async function DashboardLayout({
 }) {
   const session = await requireSession();
   const company = await getCompanySettings();
-  const [notificationCount, notifications] = await Promise.all([
-    db.notification.count({
-      where: { userId: session.user.id, isRead: false },
-    }),
-    db.notification.findMany({
-      where: { userId: session.user.id },
-      orderBy: { createdAt: "desc" },
-      take: 6,
-    }),
-  ]);
+  let notificationCount = 0;
+  let notifications: Awaited<ReturnType<typeof db.notification.findMany>> = [];
+  try {
+    [notificationCount, notifications] = await Promise.all([
+      db.notification.count({
+        where: { userId: session.user.id, isRead: false },
+      }),
+      db.notification.findMany({
+        where: { userId: session.user.id },
+        orderBy: { createdAt: "desc" },
+        take: 6,
+      }),
+    ]);
+  } catch {
+    notificationCount = 0;
+    notifications = [];
+  }
 
   return (
     <DashboardShell

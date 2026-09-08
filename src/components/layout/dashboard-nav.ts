@@ -68,8 +68,11 @@ export const dashboardNavGroups: NavGroup[] = [
     label: "Construction",
     items: [
       { href: "/dashboard/projects", label: "Projects", icon: HardHat, resource: "projects" },
-      { href: "/dashboard/procurement", label: "Procurement", icon: ShoppingCart, resource: "procurement" },
-      { href: "/dashboard/inventory", label: "Inventory", icon: Package, resource: "inventory" },
+      { href: "/dashboard/quotations", label: "Quotations", icon: FileText, resource: "projects" },
+      { href: "/dashboard/progress", label: "Weekly progress", icon: ClipboardCheck, resource: "projects" },
+      { href: "/dashboard/contracts", label: "Contracts & IPCs", icon: FileText, resource: "projects" },
+      { href: "/dashboard/procurement", label: "Material purchase", icon: ShoppingCart, resource: "procurement" },
+      { href: "/dashboard/inventory", label: "Stores & materials", icon: Package, resource: "inventory" },
       { href: "/dashboard/equipment", label: "Equipment", icon: Truck, resource: "equipment" },
       { href: "/dashboard/suppliers", label: "Suppliers", icon: Truck, resource: "suppliers" },
       { href: "/dashboard/contractors", label: "Contractors", icon: HardHat, resource: "contractors" },

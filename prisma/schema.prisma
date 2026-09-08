@@ -15,40 +15,43 @@ datasource db {
 // ─────────────────────────────────────────────
 
 model User {
-  id             String    @id @default(cuid())
-  email          String    @unique
-  emailVerified  DateTime?
-  passwordHash   String?
-  name           String?
-  phone          String?
-  image          String?
-  isActive       Boolean   @default(true)
-  roleId         String
-  role           Role      @relation(fields: [roleId], references: [id])
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  deletedAt      DateTime?
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  passwordHash  String?
+  name          String?
+  phone         String?
+  image         String?
+  isActive      Boolean   @default(true)
+  roleId        String
+  role          Role      @relation(fields: [roleId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
 
   accounts            Account[]
   sessions            Session[]
   employee            Employee?
   propertyOwner       PropertyOwner?
   tenant              Tenant?
-  assignedLeads       Lead[]                 @relation("LeadAssignee")
-  createdLeads        Lead[]                 @relation("LeadCreator")
+  assignedLeads       Lead[]                      @relation("LeadAssignee")
+  createdLeads        Lead[]                      @relation("LeadCreator")
   leadActivities      LeadActivity[]
-  assignedProperties  Property[]             @relation("PropertyAgent")
-  assignedTasks       ProjectTask[]          @relation("TaskAssignee")
-  createdTasks        ProjectTask[]          @relation("TaskCreator")
+  assignedProperties  Property[]                  @relation("PropertyAgent")
+  assignedTasks       ProjectTask[]               @relation("TaskAssignee")
+  createdTasks        ProjectTask[]               @relation("TaskCreator")
   siteReports         SiteReport[]
-  purchaseRequests    PurchaseRequest[]      @relation("PRRequester")
+  purchaseRequests    PurchaseRequest[]           @relation("PRRequester")
   approvals           Approval[]
   notifications       Notification[]
   auditLogs           AuditLog[]
-  documents           Document[]             @relation("DocumentUploader")
-  maintenanceAssigned MaintenanceTicket[]    @relation("MaintenanceAssignee")
+  documents           Document[]                  @relation("DocumentUploader")
+  maintenanceAssigned MaintenanceTicket[]         @relation("MaintenanceAssignee")
   createdInspections  Inspection[]
-  viewingsAsAgent     Viewing[]              @relation("ViewingAgent")
+  viewingsAsAgent     Viewing[]                   @relation("ViewingAgent")
+  weeklyReports       WeeklyProgressReport[]
+  clientQuotations    ClientQuotation[]           @relation("QuotationAuthor")
+  ipcsCertified       InterimPaymentCertificate[] @relation("IpcCertifier")
 
   @@index([roleId])
   @@index([email])
@@ -129,7 +132,7 @@ model CompanySetting {
   id                 String   @id @default(cuid())
   companyName        String   @default("JK Express")
   tagline            String?
-  description        String? 
+  description        String?
   logoUrl            String?
   primaryColor       String   @default("#0B1F3A")
   secondaryColor     String   @default("#C9A227")
@@ -180,23 +183,24 @@ model Department {
 // ─────────────────────────────────────────────
 
 model Employee {
-  id               String     @id @default(cuid())
-  userId           String     @unique
-  user             User       @relation(fields: [userId], references: [id])
-  employeeCode     String     @unique
+  id               String      @id @default(cuid())
+  userId           String      @unique
+  user             User        @relation(fields: [userId], references: [id])
+  employeeCode     String      @unique
   departmentId     String?
   department       Department? @relation(fields: [departmentId], references: [id])
   jobTitle         String?
-  employmentStatus String     @default("ACTIVE")
+  employmentStatus String      @default("ACTIVE")
   hireDate         DateTime?
   emergencyName    String?
   emergencyPhone   String?
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
   deletedAt        DateTime?
 
-  managedProjects ConstructionProject[] @relation("ProjectManager")
-  leaveRequests   LeaveRequest[]
+  managedProjects    ConstructionProject[] @relation("ProjectManager")
+  projectAssignments ProjectTeamMember[]
+  leaveRequests      LeaveRequest[]
 
   @@index([departmentId])
 }
@@ -229,7 +233,7 @@ model Contact {
   address   String?
   city      String?
   country   String?   @default("Uganda")
-  notes     String?  
+  notes     String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
@@ -246,29 +250,29 @@ model Contact {
 }
 
 model Lead {
-  id           String    @id @default(cuid())
-  reference    String    @unique
-  firstName    String
-  lastName     String
-  email        String?
-  phone        String?
-  source       String    @default("WEBSITE")
-  stage        String    @default("NEW")
-  interest     String? // SALE, RENT, CONSTRUCTION, MANAGEMENT
-  message      String?  
-  lostReason   String?
-  propertyId   String?
-  property     Property? @relation(fields: [propertyId], references: [id])
-  contactId    String?
-  contact      Contact?  @relation(fields: [contactId], references: [id])
-  assigneeId   String?
-  assignee     User?     @relation("LeadAssignee", fields: [assigneeId], references: [id])
-  createdById  String?
-  createdBy    User?     @relation("LeadCreator", fields: [createdById], references: [id])
-  followUpAt   DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  deletedAt    DateTime?
+  id          String    @id @default(cuid())
+  reference   String    @unique
+  firstName   String
+  lastName    String
+  email       String?
+  phone       String?
+  source      String    @default("WEBSITE")
+  stage       String    @default("NEW")
+  interest    String? // SALE, RENT, CONSTRUCTION, MANAGEMENT
+  message     String?
+  lostReason  String?
+  propertyId  String?
+  property    Property? @relation(fields: [propertyId], references: [id])
+  contactId   String?
+  contact     Contact?  @relation(fields: [contactId], references: [id])
+  assigneeId  String?
+  assignee    User?     @relation("LeadAssignee", fields: [assigneeId], references: [id])
+  createdById String?
+  createdBy   User?     @relation("LeadCreator", fields: [createdById], references: [id])
+  followUpAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
 
   activities LeadActivity[]
 
@@ -286,7 +290,7 @@ model LeadActivity {
   user        User?    @relation(fields: [userId], references: [id])
   type        String // NOTE, CALL, EMAIL, MEETING, STATUS_CHANGE
   title       String
-  description String? 
+  description String?
   createdAt   DateTime @default(now())
 
   @@index([leadId])
@@ -316,21 +320,21 @@ model PropertyOwner {
 }
 
 model Property {
-  id               String    @id @default(cuid())
-  reference        String    @unique
-  slug             String    @unique
+  id               String         @id @default(cuid())
+  reference        String         @unique
+  slug             String         @unique
   title            String
-  description      String?  
+  description      String?
   propertyType     String // HOUSE, APARTMENT, LAND, COMMERCIAL, OFFICE, WAREHOUSE
   listingType      String // SALE, RENT
-  country          String    @default("Uganda")
+  country          String         @default("Uganda")
   district         String?
   city             String?
   address          String?
   latitude         Float?
   longitude        Float?
-  price            Decimal  
-  currency         String    @default("UGX")
+  price            Decimal
+  currency         String         @default("UGX")
   bedrooms         Int?
   bathrooms        Int?
   parkingSpaces    Int?
@@ -340,16 +344,16 @@ model Property {
   videoUrl         String?
   virtualTourUrl   String?
   brochureUrl      String?
-  status           String    @default("DRAFT") // DRAFT, AVAILABLE, RESERVED, RENTED, SOLD, UNDER_MAINTENANCE, UNAVAILABLE
-  isFeatured       Boolean   @default(false)
-  isPublished      Boolean   @default(false)
+  status           String         @default("DRAFT") // DRAFT, AVAILABLE, RESERVED, RENTED, SOLD, UNDER_MAINTENANCE, UNAVAILABLE
+  isFeatured       Boolean        @default(false)
+  isPublished      Boolean        @default(false)
   listedAt         DateTime?
   ownerId          String?
   owner            PropertyOwner? @relation(fields: [ownerId], references: [id])
   agentId          String?
-  agent            User?     @relation("PropertyAgent", fields: [agentId], references: [id])
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  agent            User?          @relation("PropertyAgent", fields: [agentId], references: [id])
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
   deletedAt        DateTime?
 
   images       PropertyImage[]
@@ -431,9 +435,9 @@ model Unit {
   unitType        String? // STUDIO, 1BR, 2BR, 3BR, SHOP, OFFICE
   bedrooms        Int?
   bathrooms       Int?
-  monthlyRent     Decimal? 
-  serviceCharge   Decimal? 
-  depositRequired Decimal? 
+  monthlyRent     Decimal?
+  serviceCharge   Decimal?
+  depositRequired Decimal?
   currency        String    @default("UGX")
   status          String    @default("VACANT") // VACANT, RESERVED, OCCUPIED, UNDER_MAINTENANCE, UNAVAILABLE
   sizeSqm         Float?
@@ -451,45 +455,45 @@ model Unit {
 }
 
 model Viewing {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   propertyId   String
-  property     Property @relation(fields: [propertyId], references: [id])
+  property     Property  @relation(fields: [propertyId], references: [id])
   contactId    String?
-  contact      Contact? @relation(fields: [contactId], references: [id])
+  contact      Contact?  @relation(fields: [contactId], references: [id])
   clientName   String
   clientEmail  String?
   clientPhone  String?
   agentId      String?
-  agent        User?    @relation("ViewingAgent", fields: [agentId], references: [id])
+  agent        User?     @relation("ViewingAgent", fields: [agentId], references: [id])
   scheduledAt  DateTime
-  status       String   @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED, NO_SHOW
-  feedback     String? 
+  status       String    @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED, NO_SHOW
+  feedback     String?
   followUpDate DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@index([propertyId])
   @@index([scheduledAt])
 }
 
 model Reservation {
-  id              String    @id @default(cuid())
+  id              String   @id @default(cuid())
   propertyId      String
-  property        Property  @relation(fields: [propertyId], references: [id])
+  property        Property @relation(fields: [propertyId], references: [id])
   contactId       String?
-  contact         Contact?  @relation(fields: [contactId], references: [id])
+  contact         Contact? @relation(fields: [contactId], references: [id])
   clientName      String
   clientEmail     String?
   clientPhone     String?
-  reservationDate DateTime  @default(now())
+  reservationDate DateTime @default(now())
   expiryDate      DateTime
-  reservationFee  Decimal? 
-  currency        String    @default("UGX")
-  paymentStatus   String    @default("PENDING")
-  status          String    @default("ACTIVE") // ACTIVE, EXPIRED, CONVERTED, CANCELLED
-  notes           String?  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  reservationFee  Decimal?
+  currency        String   @default("UGX")
+  paymentStatus   String   @default("PENDING")
+  status          String   @default("ACTIVE") // ACTIVE, EXPIRED, CONVERTED, CANCELLED
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([propertyId, status])
 }
@@ -499,21 +503,21 @@ model Reservation {
 // ─────────────────────────────────────────────
 
 model Tenant {
-  id          String    @id @default(cuid())
-  userId      String?   @unique
-  user        User?     @relation(fields: [userId], references: [id])
-  firstName   String
-  lastName    String
-  email       String?
-  phone       String?
-  idNumber    String?
-  nationality String?   @default("Ugandan")
-  address     String?
+  id             String    @id @default(cuid())
+  userId         String?   @unique
+  user           User?     @relation(fields: [userId], references: [id])
+  firstName      String
+  lastName       String
+  email          String?
+  phone          String?
+  idNumber       String?
+  nationality    String?   @default("Ugandan")
+  address        String?
   emergencyName  String?
   emergencyPhone String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
 
   applications TenantApplication[]
   leases       Lease[]
@@ -531,35 +535,35 @@ model TenantApplication {
   propertyId String?
   unitId     String?
   status     String   @default("PENDING")
-  notes      String? 
+  notes      String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
 
 model Lease {
-  id              String    @id @default(cuid())
-  reference       String    @unique
-  tenantId        String
-  tenant          Tenant    @relation(fields: [tenantId], references: [id])
-  propertyId      String
-  property        Property  @relation(fields: [propertyId], references: [id])
-  unitId          String
-  unit            Unit      @relation(fields: [unitId], references: [id])
-  startDate       DateTime
-  endDate         DateTime
-  monthlyRent     Decimal  
-  serviceCharge   Decimal   @default(0)
-  deposit         Decimal   @default(0)
-  currency        String    @default("UGX")
-  paymentDueDay   Int       @default(1)
-  gracePeriodDays Int       @default(5)
-  lateFee         Decimal   @default(0)
-  billingFrequency String   @default("MONTHLY")
-  status          String    @default("DRAFT") // DRAFT, PENDING_APPROVAL, ACTIVE, EXPIRING, EXPIRED, TERMINATED, RENEWED
-  agreementUrl    String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  deletedAt       DateTime?
+  id               String    @id @default(cuid())
+  reference        String    @unique
+  tenantId         String
+  tenant           Tenant    @relation(fields: [tenantId], references: [id])
+  propertyId       String
+  property         Property  @relation(fields: [propertyId], references: [id])
+  unitId           String
+  unit             Unit      @relation(fields: [unitId], references: [id])
+  startDate        DateTime
+  endDate          DateTime
+  monthlyRent      Decimal
+  serviceCharge    Decimal   @default(0)
+  deposit          Decimal   @default(0)
+  currency         String    @default("UGX")
+  paymentDueDay    Int       @default(1)
+  gracePeriodDays  Int       @default(5)
+  lateFee          Decimal   @default(0)
+  billingFrequency String    @default("MONTHLY")
+  status           String    @default("DRAFT") // DRAFT, PENDING_APPROVAL, ACTIVE, EXPIRING, EXPIRED, TERMINATED, RENEWED
+  agreementUrl     String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
 
   invoices         Invoice[]
   securityDeposits SecurityDeposit[]
@@ -584,11 +588,11 @@ model Invoice {
   tenantId      String?
   issueDate     DateTime  @default(now())
   dueDate       DateTime
-  subtotal      Decimal  
+  subtotal      Decimal
   taxAmount     Decimal   @default(0)
-  totalAmount   Decimal  
+  totalAmount   Decimal
   amountPaid    Decimal   @default(0)
-  balance       Decimal  
+  balance       Decimal
   currency      String    @default("UGX")
   status        String    @default("PENDING") // DRAFT, PENDING, PARTIAL, PAID, OVERDUE, CANCELLED
   notes         String?
@@ -617,7 +621,7 @@ model InvoiceItem {
 model Payment {
   id            String    @id @default(cuid())
   paymentNumber String    @unique
-  amount        Decimal  
+  amount        Decimal
   currency      String    @default("UGX")
   method        String    @default("CASH") // CASH, BANK_TRANSFER, MOBILE_MONEY, CARD, CHEQUE, OTHER
   paymentDate   DateTime  @default(now())
@@ -659,17 +663,17 @@ model Receipt {
 }
 
 model SecurityDeposit {
-  id        String    @id @default(cuid())
-  leaseId   String
-  lease     Lease     @relation(fields: [leaseId], references: [id])
-  amount    Decimal  
-  currency  String    @default("UGX")
-  status    String    @default("HELD") // HELD, PARTIAL_REFUND, REFUNDED, FORFEITED
-  heldAt    DateTime  @default(now())
+  id         String    @id @default(cuid())
+  leaseId    String
+  lease      Lease     @relation(fields: [leaseId], references: [id])
+  amount     Decimal
+  currency   String    @default("UGX")
+  status     String    @default("HELD") // HELD, PARTIAL_REFUND, REFUNDED, FORFEITED
+  heldAt     DateTime  @default(now())
   releasedAt DateTime?
-  notes     String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  notes      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }
 
 model PropertyExpense {
@@ -678,7 +682,7 @@ model PropertyExpense {
   property    Property @relation(fields: [propertyId], references: [id])
   category    String
   description String
-  amount      Decimal 
+  amount      Decimal
   currency    String   @default("UGX")
   expenseDate DateTime @default(now())
   createdAt   DateTime @default(now())
@@ -686,33 +690,33 @@ model PropertyExpense {
 }
 
 model OwnerStatement {
-  id           String        @id @default(cuid())
-  ownerId      String
-  owner        PropertyOwner @relation(fields: [ownerId], references: [id])
-  periodStart  DateTime
-  periodEnd    DateTime
-  rentCollected Decimal     
-  expenses     Decimal      
-  managementFee Decimal     
-  netPayable   Decimal      
-  currency     String        @default("UGX")
-  status       String        @default("DRAFT")
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id            String        @id @default(cuid())
+  ownerId       String
+  owner         PropertyOwner @relation(fields: [ownerId], references: [id])
+  periodStart   DateTime
+  periodEnd     DateTime
+  rentCollected Decimal
+  expenses      Decimal
+  managementFee Decimal
+  netPayable    Decimal
+  currency      String        @default("UGX")
+  status        String        @default("DRAFT")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 }
 
 model Expense {
-  id          String    @id @default(cuid())
+  id          String               @id @default(cuid())
   category    String
   description String
-  amount      Decimal  
-  currency    String    @default("UGX")
-  expenseDate DateTime  @default(now())
+  amount      Decimal
+  currency    String               @default("UGX")
+  expenseDate DateTime             @default(now())
   projectId   String?
   project     ConstructionProject? @relation(fields: [projectId], references: [id])
-  status      String    @default("RECORDED")
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  status      String               @default("RECORDED")
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
   deletedAt   DateTime?
 
   @@index([category])
@@ -734,7 +738,7 @@ model MaintenanceTicket {
   tenant          Tenant?   @relation(fields: [tenantId], references: [id])
   category        String // PLUMBING, ELECTRICAL, HVAC, STRUCTURAL, GENERAL, OTHER
   title           String
-  description     String   
+  description     String
   priority        String    @default("NORMAL") // LOW, NORMAL, HIGH, EMERGENCY
   status          String    @default("REPORTED") // REPORTED, REVIEWED, ASSIGNED, IN_PROGRESS, AWAITING_MATERIALS, COMPLETED, INSPECTED, CLOSED, CANCELLED
   assigneeId      String?
@@ -743,10 +747,10 @@ model MaintenanceTicket {
   reportedAt      DateTime  @default(now())
   scheduledAt     DateTime?
   completedAt     DateTime?
-  estimatedCost   Decimal? 
-  actualCost      Decimal? 
-  materialsUsed   String?  
-  tenantFeedback  String?  
+  estimatedCost   Decimal?
+  actualCost      Decimal?
+  materialsUsed   String?
+  tenantFeedback  String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   deletedAt       DateTime?
@@ -759,13 +763,13 @@ model MaintenanceTicket {
 }
 
 model MaintenanceUpdate {
-  id          String            @id @default(cuid())
-  ticketId    String
-  ticket      MaintenanceTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  note        String           
-  status      String?
-  createdBy   String?
-  createdAt   DateTime          @default(now())
+  id        String            @id @default(cuid())
+  ticketId  String
+  ticket    MaintenanceTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  note      String
+  status    String?
+  createdBy String?
+  createdAt DateTime          @default(now())
 }
 
 model Inspection {
@@ -782,7 +786,7 @@ model Inspection {
   scheduledAt   DateTime?
   completedAt   DateTime?
   overallRating String?
-  notes         String?  
+  notes         String?
   status        String    @default("SCHEDULED")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -791,13 +795,13 @@ model Inspection {
 }
 
 model InspectionItem {
-  id             String     @id @default(cuid())
-  inspectionId   String
-  inspection     Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
-  itemName       String
-  condition      String? // GOOD, FAIR, POOR, DAMAGED
-  comments       String?
-  estimatedCost  Decimal?  
+  id            String     @id @default(cuid())
+  inspectionId  String
+  inspection    Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  itemName      String
+  condition     String? // GOOD, FAIR, POOR, DAMAGED
+  comments      String?
+  estimatedCost Decimal?
 }
 
 // ─────────────────────────────────────────────
@@ -809,7 +813,7 @@ model ConstructionProject {
   code                 String    @unique
   slug                 String    @unique
   name                 String
-  description          String?  
+  description          String?
   clientName           String?
   projectManagerId     String?
   projectManager       Employee? @relation("ProjectManager", fields: [projectManagerId], references: [id])
@@ -819,8 +823,8 @@ model ConstructionProject {
   startDate            DateTime?
   expectedCompletion   DateTime?
   actualCompletion     DateTime?
-  contractValue        Decimal? 
-  approvedBudget       Decimal? 
+  contractValue        Decimal?
+  approvedBudget       Decimal?
   currentExpenditure   Decimal   @default(0)
   completionPercentage Float     @default(0)
   status               String    @default("PLANNING") // PLANNING, AWAITING_APPROVAL, ACTIVE, ON_HOLD, DELAYED, COMPLETED, CANCELLED
@@ -830,14 +834,21 @@ model ConstructionProject {
   updatedAt            DateTime  @updatedAt
   deletedAt            DateTime?
 
-  phases      ProjectPhase[]
-  milestones  ProjectMilestone[]
-  tasks       ProjectTask[]
-  siteReports SiteReport[]
-  boqs        BOQ[]
-  expenses    Expense[]
-  documents   Document[]
-  purchaseRequests PurchaseRequest[]
+  phases            ProjectPhase[]
+  milestones        ProjectMilestone[]
+  tasks             ProjectTask[]
+  siteReports       SiteReport[]
+  boqs              BOQ[]
+  expenses          Expense[]
+  documents         Document[]
+  purchaseRequests  PurchaseRequest[]
+  teamMembers       ProjectTeamMember[]
+  subcontracts      ProjectSubcontract[]
+  weeklyReports     WeeklyProgressReport[]
+  clientQuotations  ClientQuotation[]
+  contracts         ConstructionContract[]
+  stockTransactions StockTransaction[]
+  variations        VariationOrder[]
 
   @@index([status])
   @@index([isPublished])
@@ -878,7 +889,7 @@ model ProjectTask {
   phaseId              String?
   phase                ProjectPhase?       @relation(fields: [phaseId], references: [id])
   title                String
-  description          String?            
+  description          String?
   assigneeId           String?
   assignee             User?               @relation("TaskAssignee", fields: [assigneeId], references: [id])
   createdById          String?
@@ -897,30 +908,232 @@ model ProjectTask {
 }
 
 model SiteReport {
-  id                    String              @id @default(cuid())
-  projectId             String
-  project               ConstructionProject @relation(fields: [projectId], references: [id])
-  reportDate            DateTime
-  submittedById         String
-  submittedBy           User                @relation(fields: [submittedById], references: [id])
-  weather               String?
-  workersPresent        Int?
-  contractorsPresent    Int?
-  workCompleted         String?            
-  equipmentUsed         String?            
-  materialsReceived     String?            
-  materialsConsumed     String?            
-  safetyObservations    String?            
-  delays                String?            
-  incidents             String?            
-  problems              String?            
-  nextDayPlan           String?            
-  status                String              @default("SUBMITTED") // SUBMITTED, REVIEWED, APPROVED, REJECTED
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
+  id                 String              @id @default(cuid())
+  projectId          String
+  project            ConstructionProject @relation(fields: [projectId], references: [id])
+  reportDate         DateTime
+  submittedById      String
+  submittedBy        User                @relation(fields: [submittedById], references: [id])
+  weather            String?
+  workersPresent     Int?
+  contractorsPresent Int?
+  workCompleted      String?
+  equipmentUsed      String?
+  materialsReceived  String?
+  materialsConsumed  String?
+  safetyObservations String?
+  delays             String?
+  incidents          String?
+  problems           String?
+  nextDayPlan        String?
+  status             String              @default("SUBMITTED") // SUBMITTED, REVIEWED, APPROVED, REJECTED
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  photos SiteReportPhoto[]
 
   @@index([projectId])
   @@index([reportDate])
+}
+
+model SiteReportPhoto {
+  id           String     @id @default(cuid())
+  siteReportId String
+  siteReport   SiteReport @relation(fields: [siteReportId], references: [id], onDelete: Cascade)
+  url          String
+  caption      String?
+  createdAt    DateTime   @default(now())
+
+  @@index([siteReportId])
+}
+
+// Company staff on a project — never subcontractor labour.
+model ProjectTeamMember {
+  id         String              @id @default(cuid())
+  projectId  String
+  project    ConstructionProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  employeeId String
+  employee   Employee            @relation(fields: [employeeId], references: [id])
+  role       String              @default("SITE_STAFF") // PROJECT_MANAGER, SITE_ENGINEER, QUANTITY_SURVEYOR, STOREKEEPER, ACCOUNTANT, SITE_STAFF
+  startDate  DateTime?
+  endDate    DateTime?
+  createdAt  DateTime            @default(now())
+
+  @@unique([projectId, employeeId, role])
+  @@index([projectId])
+}
+
+model ProjectSubcontract {
+  id           String              @id @default(cuid())
+  projectId    String
+  project      ConstructionProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contractorId String
+  contractor   Contractor          @relation(fields: [contractorId], references: [id])
+  packageName  String
+  contractSum  Decimal?
+  currency     String              @default("UGX")
+  status       String              @default("ACTIVE") // TENDERED, AWARDED, ACTIVE, COMPLETED, TERMINATED
+  startDate    DateTime?
+  endDate      DateTime?
+  notes        String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([projectId])
+  @@index([contractorId])
+}
+
+// FIDIC-style weekly progress. Subcontractor sends updates; JK staff enter the official record.
+model WeeklyProgressReport {
+  id              String              @id @default(cuid())
+  projectId       String
+  project         ConstructionProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  weekStarting    DateTime
+  enteredById     String
+  enteredBy       User                @relation(fields: [enteredById], references: [id])
+  contractorId    String?
+  contractor      Contractor?         @relation(fields: [contractorId], references: [id])
+  progressPercent Float?
+  workCompleted   String?
+  labourOnSite    Int?
+  materialsOnSite String?
+  delays          String?
+  safetyNotes     String?
+  nextWeekPlan    String?
+  weather         String?
+  status          String              @default("DRAFT") // DRAFT, SUBMITTED, REVIEWED
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([projectId])
+  @@index([weekStarting])
+}
+
+model ClientQuotation {
+  id              String               @id @default(cuid())
+  quotationNumber String               @unique
+  title           String
+  clientName      String
+  clientEmail     String?
+  clientPhone     String?
+  clientAddress   String?
+  siteLocation    String?
+  projectId       String?
+  project         ConstructionProject? @relation(fields: [projectId], references: [id])
+  createdById     String
+  createdBy       User                 @relation("QuotationAuthor", fields: [createdById], references: [id])
+  currency        String               @default("UGX")
+  revision        Int                  @default(0)
+  discount        Decimal              @default(0)
+  taxRate         Decimal              @default(0)
+  contingencyRate Decimal              @default(0)
+  scopeOfWorks    String?
+  inclusions      String?
+  exclusions      String?
+  paymentTerms    String?
+  duration        String?
+  warranty        String?
+  variationTerms  String?
+  preparedBy      String?
+  approvedBy      String?
+  bankDetails     String?
+  validUntil      DateTime?
+  notes           String?
+  status          String               @default("DRAFT") // DRAFT, SENT, ACCEPTED, DECLINED, EXPIRED
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  items ClientQuotationItem[]
+
+  @@index([status])
+}
+
+model ClientQuotationItem {
+  id          String          @id @default(cuid())
+  quotationId String
+  quotation   ClientQuotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  description String
+  section     String              @default("General")
+  unit        String          @default("item")
+  quantity    Decimal
+  unitRate    Decimal
+  sortOrder   Int             @default(0)
+}
+
+model ConstructionContract {
+  id             String              @id @default(cuid())
+  contractNumber String              @unique
+  projectId      String
+  project        ConstructionProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contractorId   String?
+  contractor     Contractor?         @relation(fields: [contractorId], references: [id])
+  title          String
+  type           String              @default("MAIN") // MAIN, SUB
+  formOfContract String              @default("FIDIC") // FIDIC, BESPOKE, MOWT
+  contractSum    Decimal?
+  currency       String              @default("UGX")
+  startDate      DateTime?
+  endDate        DateTime?
+  status         String              @default("DRAFT") // DRAFT, EXECUTED, ACTIVE, COMPLETED, TERMINATED
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  specifications ContractSpecification[]
+  ipcs           InterimPaymentCertificate[]
+
+  @@index([projectId])
+}
+
+model ContractSpecification {
+  id          String               @id @default(cuid())
+  contractId  String
+  contract    ConstructionContract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  clause      String
+  title       String
+  description String?
+  sortOrder   Int                  @default(0)
+}
+
+model InterimPaymentCertificate {
+  id            String               @id @default(cuid())
+  ipcNumber     String               @unique
+  contractId    String
+  contract      ConstructionContract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  certifiedById String?
+  certifiedBy   User?                @relation("IpcCertifier", fields: [certifiedById], references: [id])
+  periodStart   DateTime?
+  periodEnd     DateTime?
+  grossAmount   Decimal
+  retention     Decimal              @default(0)
+  previousPaid  Decimal              @default(0)
+  amountDue     Decimal
+  currency      String               @default("UGX")
+  status        String               @default("DRAFT") // DRAFT, CERTIFIED, PAID
+  notes         String?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  @@index([contractId])
+}
+
+model VariationOrder {
+  id              String              @id @default(cuid())
+  variationNumber String              @unique
+  projectId       String
+  project         ConstructionProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  reason          String?
+  amount          Decimal             @default(0)
+  extensionDays   Int                 @default(0)
+  status          String              @default("DRAFT") // DRAFT, SUBMITTED, APPROVED, REJECTED
+  requestedAt     DateTime            @default(now())
+  approvedAt      DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([projectId])
+  @@index([status])
 }
 
 model BOQ {
@@ -937,9 +1150,9 @@ model BOQ {
 }
 
 model BOQItem {
-  id                String  @id @default(cuid())
+  id                String   @id @default(cuid())
   boqId             String
-  boq               BOQ     @relation(fields: [boqId], references: [id], onDelete: Cascade)
+  boq               BOQ      @relation(fields: [boqId], references: [id], onDelete: Cascade)
   section           String?
   itemNumber        String
   description       String
@@ -970,37 +1183,41 @@ model Supplier {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  quotations    SupplierQuotation[]
+  quotations     SupplierQuotation[]
   purchaseOrders PurchaseOrder[]
 }
 
 model Contractor {
-  id           String    @id @default(cuid())
-  contactId    String?   @unique
-  contact      Contact?  @relation(fields: [contactId], references: [id])
-  name         String
-  specialty    String?
-  email        String?
-  phone        String?
-  address      String?
-  isActive     Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  deletedAt    DateTime?
+  id        String    @id @default(cuid())
+  contactId String?   @unique
+  contact   Contact?  @relation(fields: [contactId], references: [id])
+  name      String
+  specialty String?
+  email     String?
+  phone     String?
+  address   String?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  subcontracts  ProjectSubcontract[]
+  weeklyReports WeeklyProgressReport[]
+  contracts     ConstructionContract[]
 }
 
 model PurchaseRequest {
-  id          String               @id @default(cuid())
-  requestNumber String             @unique
-  requesterId String
-  requester   User                 @relation("PRRequester", fields: [requesterId], references: [id])
-  projectId   String?
-  project     ConstructionProject? @relation(fields: [projectId], references: [id])
-  title       String
-  justification String?           
-  status      String               @default("DRAFT") // DRAFT, SUBMITTED, PM_REVIEW, QUOTING, PENDING_APPROVAL, APPROVED, REJECTED, ORDERED, RECEIVED, CANCELLED
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
+  id            String               @id @default(cuid())
+  requestNumber String               @unique
+  requesterId   String
+  requester     User                 @relation("PRRequester", fields: [requesterId], references: [id])
+  projectId     String?
+  project       ConstructionProject? @relation(fields: [projectId], references: [id])
+  title         String
+  justification String?
+  status        String               @default("DRAFT") // DRAFT, SUBMITTED, PM_REVIEW, QUOTING, PENDING_APPROVAL, APPROVED, REJECTED, ORDERED, RECEIVED, CANCELLED
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
 
   items      PurchaseRequestItem[]
   quotations SupplierQuotation[]
@@ -1011,86 +1228,86 @@ model PurchaseRequest {
 }
 
 model PurchaseRequestItem {
-  id          String          @id @default(cuid())
-  requestId   String
-  request     PurchaseRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  description String
-  quantity    Decimal        
-  unit        String
-  estimatedUnitCost Decimal? 
+  id                String          @id @default(cuid())
+  requestId         String
+  request           PurchaseRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  description       String
+  quantity          Decimal
+  unit              String
+  estimatedUnitCost Decimal?
 }
 
 model SupplierQuotation {
-  id          String          @id @default(cuid())
-  requestId   String
-  request     PurchaseRequest @relation(fields: [requestId], references: [id])
-  supplierId  String
-  supplier    Supplier        @relation(fields: [supplierId], references: [id])
-  amount      Decimal        
-  currency    String          @default("UGX")
-  validUntil  DateTime?
-  notes       String?
-  isSelected  Boolean         @default(false)
-  createdAt   DateTime        @default(now())
+  id         String          @id @default(cuid())
+  requestId  String
+  request    PurchaseRequest @relation(fields: [requestId], references: [id])
+  supplierId String
+  supplier   Supplier        @relation(fields: [supplierId], references: [id])
+  amount     Decimal
+  currency   String          @default("UGX")
+  validUntil DateTime?
+  notes      String?
+  isSelected Boolean         @default(false)
+  createdAt  DateTime        @default(now())
 }
 
 model PurchaseOrder {
-  id          String          @id @default(cuid())
-  orderNumber String          @unique
+  id          String           @id @default(cuid())
+  orderNumber String           @unique
   requestId   String?
   request     PurchaseRequest? @relation(fields: [requestId], references: [id])
   supplierId  String
-  supplier    Supplier        @relation(fields: [supplierId], references: [id])
-  orderDate   DateTime        @default(now())
-  totalAmount Decimal        
-  currency    String          @default("UGX")
-  status      String          @default("ISSUED") // ISSUED, PARTIAL, RECEIVED, CANCELLED
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  supplier    Supplier         @relation(fields: [supplierId], references: [id])
+  orderDate   DateTime         @default(now())
+  totalAmount Decimal
+  currency    String           @default("UGX")
+  status      String           @default("ISSUED") // ISSUED, PARTIAL, RECEIVED, CANCELLED
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
   grns GoodsReceivedNote[]
 }
 
 model GoodsReceivedNote {
-  id           String        @id @default(cuid())
-  grnNumber    String        @unique
+  id              String        @id @default(cuid())
+  grnNumber       String        @unique
   purchaseOrderId String
-  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
-  receivedAt   DateTime      @default(now())
-  receivedBy   String?
-  notes        String?
-  createdAt    DateTime      @default(now())
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  receivedAt      DateTime      @default(now())
+  receivedBy      String?
+  notes           String?
+  createdAt       DateTime      @default(now())
 }
 
 model Warehouse {
-  id        String    @id @default(cuid())
+  id        String   @id @default(cuid())
   name      String
-  code      String    @unique
+  code      String   @unique
   location  String?
-  isActive  Boolean   @default(true)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  items InventoryItem[]
+  items        InventoryItem[]
   transactions StockTransaction[]
 }
 
 model InventoryItem {
-  id            String     @id @default(cuid())
-  sku           String     @unique
-  name          String
-  category      String // MATERIALS, TOOLS, MACHINERY, SAFETY, OFFICE, SPARE_PARTS
-  unit          String
-  quantityOnHand Decimal   @default(0)
-  reorderLevel  Decimal    @default(0)
-  unitCost      Decimal?  
-  currency      String     @default("UGX")
-  warehouseId   String?
-  warehouse     Warehouse? @relation(fields: [warehouseId], references: [id])
-  isActive      Boolean    @default(true)
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  deletedAt     DateTime?
+  id             String     @id @default(cuid())
+  sku            String     @unique
+  name           String
+  category       String // MATERIALS, TOOLS, MACHINERY, SAFETY, OFFICE, SPARE_PARTS
+  unit           String
+  quantityOnHand Decimal    @default(0)
+  reorderLevel   Decimal    @default(0)
+  unitCost       Decimal?
+  currency       String     @default("UGX")
+  warehouseId    String?
+  warehouse      Warehouse? @relation(fields: [warehouseId], references: [id])
+  isActive       Boolean    @default(true)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  deletedAt      DateTime?
 
   transactions StockTransaction[]
 
@@ -1099,16 +1316,18 @@ model InventoryItem {
 }
 
 model StockTransaction {
-  id          String        @id @default(cuid())
+  id          String               @id @default(cuid())
   itemId      String
-  item        InventoryItem @relation(fields: [itemId], references: [id])
+  item        InventoryItem        @relation(fields: [itemId], references: [id])
   warehouseId String?
-  warehouse   Warehouse?    @relation(fields: [warehouseId], references: [id])
+  warehouse   Warehouse?           @relation(fields: [warehouseId], references: [id])
   type        String // RECEIPT, ISSUE, TRANSFER, ADJUSTMENT, DAMAGE, LOSS
-  quantity    Decimal      
+  quantity    Decimal
   reference   String?
   notes       String?
-  createdAt   DateTime      @default(now())
+  projectId   String?
+  project     ConstructionProject? @relation(fields: [projectId], references: [id])
+  createdAt   DateTime             @default(now())
 
   @@index([itemId])
   @@index([type])
@@ -1135,40 +1354,40 @@ model Equipment {
 // ─────────────────────────────────────────────
 
 model Approval {
-  id          String           @id @default(cuid())
-  entityType  String
-  entityId    String
-  requestId   String?
-  request     PurchaseRequest? @relation(fields: [requestId], references: [id])
-  userId      String
-  user        User             @relation(fields: [userId], references: [id])
-  decision    String // APPROVED, REJECTED
-  comment     String?
-  createdAt   DateTime         @default(now())
+  id         String           @id @default(cuid())
+  entityType String
+  entityId   String
+  requestId  String?
+  request    PurchaseRequest? @relation(fields: [requestId], references: [id])
+  userId     String
+  user       User             @relation(fields: [userId], references: [id])
+  decision   String // APPROVED, REJECTED
+  comment    String?
+  createdAt  DateTime         @default(now())
 
   @@index([entityType, entityId])
 }
 
 model Document {
-  id          String               @id @default(cuid())
-  title       String
-  description String?
-  category    String
-  fileUrl     String
-  fileName    String
-  fileSize    Int?
-  mimeType    String?
-  version     Int                  @default(1)
-  expiresAt   DateTime?
-  propertyId  String?
-  property    Property?            @relation(fields: [propertyId], references: [id])
-  projectId   String?
-  project     ConstructionProject? @relation(fields: [projectId], references: [id])
+  id           String               @id @default(cuid())
+  title        String
+  description  String?
+  category     String
+  fileUrl      String
+  fileName     String
+  fileSize     Int?
+  mimeType     String?
+  version      Int                  @default(1)
+  expiresAt    DateTime?
+  propertyId   String?
+  property     Property?            @relation(fields: [propertyId], references: [id])
+  projectId    String?
+  project      ConstructionProject? @relation(fields: [projectId], references: [id])
   uploadedById String?
-  uploadedBy  User?                @relation("DocumentUploader", fields: [uploadedById], references: [id])
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
-  deletedAt   DateTime?
+  uploadedBy   User?                @relation("DocumentUploader", fields: [uploadedById], references: [id])
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  deletedAt    DateTime?
 
   @@index([category])
   @@index([propertyId])
@@ -1176,30 +1395,30 @@ model Document {
 }
 
 model Notification {
-  id        String    @id @default(cuid())
+  id        String   @id @default(cuid())
   userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   type      String
   title     String
   message   String
   link      String?
-  isRead    Boolean   @default(false)
-  createdAt DateTime  @default(now())
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
 
   @@index([userId, isRead])
 }
 
 model AuditLog {
-  id         String   @id @default(cuid())
-  userId     String?
-  user       User?    @relation(fields: [userId], references: [id])
-  action     String
-  entityType String
-  entityId   String?
-  ipAddress  String?
+  id             String   @id @default(cuid())
+  userId         String?
+  user           User?    @relation(fields: [userId], references: [id])
+  action         String
+  entityType     String
+  entityId       String?
+  ipAddress      String?
   previousValues Json?
-  newValues  Json?
-  createdAt  DateTime @default(now())
+  newValues      Json?
+  createdAt      DateTime @default(now())
 
   @@index([entityType, entityId])
   @@index([userId])
@@ -1211,7 +1430,7 @@ model NewsArticle {
   slug        String    @unique
   title       String
   excerpt     String?
-  content     String   
+  content     String
   coverImage  String?
   isPublished Boolean   @default(false)
   publishedAt DateTime?
@@ -1224,7 +1443,7 @@ model Testimonial {
   name      String
   role      String?
   company   String?
-  content   String  
+  content   String
   rating    Int      @default(5)
   isActive  Boolean  @default(true)
   sortOrder Int      @default(0)
@@ -1232,13 +1451,13 @@ model Testimonial {
 }
 
 model JobPosting {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   title       String
   department  String?
   location    String?
-  type        String    @default("FULL_TIME")
-  description String   
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  type        String   @default("FULL_TIME")
+  description String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

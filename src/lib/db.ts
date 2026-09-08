@@ -5,7 +5,18 @@ const POSTGRES_FALLBACK =
 
 function resolveDatabaseUrl() {
   const url = process.env.DATABASE_URL?.trim();
-  if (url) return url;
+  if (url) {
+    try {
+      const hostname = new URL(url).hostname;
+      if (hostname === "db.prisma.io") {
+        process.env.DATABASE_URL = POSTGRES_FALLBACK;
+        return POSTGRES_FALLBACK;
+      }
+      return url;
+    } catch {
+      return url;
+    }
+  }
   process.env.DATABASE_URL = POSTGRES_FALLBACK;
   return POSTGRES_FALLBACK;
 }

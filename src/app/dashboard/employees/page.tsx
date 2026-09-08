@@ -28,7 +28,10 @@ export default async function EmployeesPage() {
 
   return (
     <div>
-      <PageHeader title="Employees" description="Staff directory and employment status." />
+      <PageHeader
+        title="Company employees"
+        description="JK Express staff only. Subcontractor labour is not recorded as employees."
+      />
       <div className="rounded-xl border border-slate-200 bg-white">
         <Table>
           <TableHeader>

@@ -21,7 +21,10 @@ export default async function ContractorsPage() {
 
   return (
     <div>
-      <PageHeader title="Contractors" description="Subcontractor directory." />
+      <PageHeader
+        title="Subcontractors"
+        description="External works packages. Assign them to a project; do not add their workers to Employees."
+      />
       <div className="rounded-xl border border-slate-200 bg-white">
         <Table>
           <TableHeader>

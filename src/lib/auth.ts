@@ -10,6 +10,8 @@ import {
   getLoginRateLimitKey,
 } from "@/lib/auth-rate-limit";
 import { permissionKey } from "@/lib/permissions";
+import { shouldSkipDatabase } from "@/lib/db-available";
+import { verifyOfflineUser } from "@/lib/offline-auth";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
@@ -37,6 +39,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const rateLimitKey = getLoginRateLimitKey(normalizedEmail);
         if (isLoginRateLimited(rateLimitKey)) {
           return null;
+        }
+
+        if (shouldSkipDatabase()) {
+          const offline = verifyOfflineUser(
+            normalizedEmail,
+            parsed.data.password,
+          );
+          if (!offline) {
+            recordFailedLogin(rateLimitKey);
+            return null;
+          }
+          recordSuccessfulLogin(rateLimitKey);
+          return {
+            id: offline.id,
+            email: offline.email,
+            name: offline.name,
+            image: null,
+            role: offline.role,
+            permissions: offline.permissions,
+          };
         }
 
         const user = await db.user.findFirst({

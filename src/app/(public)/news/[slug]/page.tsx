@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
 import { safeQuery } from "@/lib/safe-query";
 import { formatDate } from "@/lib/utils";
+import { pageMeta } from "@/lib/seo";
 
 const FALLBACK_COVER = "/site-photos/site-01.jpeg";
 
@@ -20,10 +21,16 @@ export async function generateMetadata({
     () => db.newsArticle.findUnique({ where: { slug } }),
     null,
   );
-  return {
-    title: article?.title ?? "Article",
-    description: article?.excerpt ?? undefined,
-  };
+  if (!article) return { title: "Article" };
+  return pageMeta({
+    title: article.title,
+    description:
+      article.excerpt ??
+      `News from JK Express: ${article.title}`,
+    path: `/news/${article.slug}`,
+    image: article.coverImage,
+    type: "article",
+  });
 }
 
 export default async function NewsArticlePage({

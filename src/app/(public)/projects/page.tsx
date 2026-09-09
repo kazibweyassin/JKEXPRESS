@@ -6,13 +6,28 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ProjectSlider } from "@/components/ui/project-slider";
 import { listPublishedProjects } from "@/lib/public-listings";
 import { projectCoverImage } from "@/lib/site-photos";
-import { statusLabel } from "@/lib/utils";
+import { cn, statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
+import { JsonLd } from "@/components/seo/json-ld";
+import { itemListJsonLd, pageMeta } from "@/lib/seo";
+import { PROJECT_SECTORS, sectorMeta } from "@/lib/trust";
+import { ProfileCta } from "@/components/ui/profile-cta";
 
-export const metadata = { title: "Projects" };
+export const metadata = pageMeta({
+  title: "Construction Projects in Uganda",
+  description:
+    "Active and completed JK Express construction projects in Kampala, Entebbe and Jinja — site progress, delivery and portfolio work.",
+  path: "/projects",
+});
 
-export default async function ProjectsPage() {
-  const projects = (await listPublishedProjects()).slice(0, 12);
+export default async function ProjectsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sector?: string }>;
+}) {
+  const { sector } = await searchParams;
+  const selected = PROJECT_SECTORS.find((item) => item.slug === sector);
+  const projects = (await listPublishedProjects(selected?.key)).slice(0, 16);
 
   const slides = projects.slice(0, 6).map((project) => ({
     id: project.id,
@@ -29,6 +44,16 @@ export default async function ProjectsPage() {
 
   return (
     <div>
+      <JsonLd
+        data={itemListJsonLd(
+          "JK Express construction projects",
+          "/projects",
+          projects.map((p) => ({
+            name: p.name,
+            path: `/projects/${p.slug}`,
+          })),
+        )}
+      />
       <section className="border-b border-slate-200 bg-gradient-to-br from-navy-950 via-navy-900 to-navy-800 text-white">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-400">
@@ -39,9 +64,12 @@ export default async function ProjectsPage() {
           </h1>
           <p className="mt-3 max-w-2xl text-slate-300">
             Active sites and completed works in Kampala, Entebbe, Jinja and
-            surrounding growth corridors — delivered with clear milestones and
-            site reporting.
+            surrounding growth corridors — grouped by sector like a contractor
+            portfolio, with facts you can take into a briefing.
           </p>
+          <div className="mt-6">
+            <ProfileCta />
+          </div>
         </div>
       </section>
 
@@ -51,11 +79,40 @@ export default async function ProjectsPage() {
         ) : null}
 
         <div className="mt-14">
+          <div className="mb-4 flex flex-wrap gap-2">
+            <Link
+              href="/projects"
+              className={cn(
+                "rounded-full px-3 py-1.5 text-sm font-medium transition",
+                !selected
+                  ? "bg-navy-900 text-white"
+                  : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-navy-50 hover:text-navy-900",
+              )}
+            >
+              All
+            </Link>
+            {PROJECT_SECTORS.map((item) => (
+              <Link
+                key={item.key}
+                href={`/projects?sector=${item.slug}`}
+                className={cn(
+                  "rounded-full px-3 py-1.5 text-sm font-medium transition",
+                  selected?.key === item.key
+                    ? "bg-navy-900 text-white"
+                    : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-navy-50 hover:text-navy-900",
+                )}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
           <div className="mb-6 flex items-end justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-navy-900">All projects</h2>
+              <h2 className="text-2xl font-bold text-navy-900">
+                {selected ? selected.label : "All projects"}
+              </h2>
               <p className="mt-1 text-sm text-slate-600">
-                Browse the full published portfolio.
+                Browse the published construction portfolio by sector.
               </p>
             </div>
             <p className="text-sm text-slate-500">{projects.length} projects</p>
@@ -78,6 +135,9 @@ export default async function ProjectsPage() {
                     <div className="mb-2 flex flex-wrap items-center gap-2">
                       <Badge variant={statusVariant(project.status)}>
                         {statusLabel(project.status)}
+                      </Badge>
+                      <Badge variant="outline">
+                        {sectorMeta(project.sector)?.label ?? project.sector}
                       </Badge>
                       <span className="text-xs text-slate-400">
                         {project.completionPercentage}%

@@ -14,6 +14,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { formatCurrency, formatDate, statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
 
@@ -22,16 +23,20 @@ export const metadata = { title: "Projects" };
 export default async function ProjectsPage() {
   await requirePagePermission("projects");
 
-  const projects = await db.constructionProject.findMany({
-    where: { deletedAt: null },
-    include: {
-      projectManager: {
-        include: { user: { select: { name: true } } },
+  const projects = await safeQuery(
+    () =>
+      db.constructionProject.findMany({
+        where: { deletedAt: null },
+        include: {
+          projectManager: {
+            include: { user: { select: { name: true } } },
+          },
       },
-    },
-    orderBy: { updatedAt: "desc" },
-    take: 100,
-  });
+        orderBy: { updatedAt: "desc" },
+        take: 100,
+      }),
+    [],
+  );
 
   return (
     <div>

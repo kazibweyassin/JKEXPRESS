@@ -12,6 +12,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { formatDate } from "@/lib/utils";
 
 export const metadata = { title: "Tenants" };
@@ -19,22 +20,26 @@ export const metadata = { title: "Tenants" };
 export default async function TenantsPage() {
   await requirePagePermission("tenants");
 
-  const tenants = await db.tenant.findMany({
-    where: { deletedAt: null },
-    include: {
-      leases: {
-        where: { status: { in: ["ACTIVE", "EXPIRING"] }, deletedAt: null },
+  const tenants = await safeQuery(
+    () =>
+      db.tenant.findMany({
+        where: { deletedAt: null },
         include: {
-          unit: { select: { unitNumber: true } },
-          property: { select: { title: true } },
+          leases: {
+            where: { status: { in: ["ACTIVE", "EXPIRING"] }, deletedAt: null },
+            include: {
+              unit: { select: { unitNumber: true } },
+              property: { select: { title: true } },
+            },
+            take: 1,
+            orderBy: { startDate: "desc" },
+          },
         },
-        take: 1,
-        orderBy: { startDate: "desc" },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-    take: 100,
-  });
+        orderBy: { createdAt: "desc" },
+        take: 100,
+      }),
+    [],
+  );
 
   return (
     <div>

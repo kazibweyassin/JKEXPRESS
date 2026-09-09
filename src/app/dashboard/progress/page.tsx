@@ -13,6 +13,7 @@ import { WeeklyProgressForm } from "@/components/forms/construction-forms";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { PROGRESS_STANDARD } from "@/lib/construction-standards";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { formatDate, statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
 
@@ -22,25 +23,37 @@ export default async function WeeklyProgressPage() {
   await requirePagePermission("projects");
 
   const [reports, projects, contractors] = await Promise.all([
-    db.weeklyProgressReport.findMany({
-      include: {
-        project: true,
-        enteredBy: true,
-        contractor: true,
-      },
-      orderBy: { weekStarting: "desc" },
-      take: 50,
-    }),
-    db.constructionProject.findMany({
-      where: { deletedAt: null },
-      select: { id: true, name: true, code: true },
-      orderBy: { name: "asc" },
-    }),
-    db.contractor.findMany({
-      where: { deletedAt: null },
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    }),
+    safeQuery(
+      () =>
+        db.weeklyProgressReport.findMany({
+          include: {
+            project: true,
+            enteredBy: true,
+            contractor: true,
+          },
+          orderBy: { weekStarting: "desc" },
+          take: 50,
+        }),
+      [],
+    ),
+    safeQuery(
+      () =>
+        db.constructionProject.findMany({
+          where: { deletedAt: null },
+          select: { id: true, name: true, code: true },
+          orderBy: { name: "asc" },
+        }),
+      [],
+    ),
+    safeQuery(
+      () =>
+        db.contractor.findMany({
+          where: { deletedAt: null },
+          select: { id: true, name: true },
+          orderBy: { name: "asc" },
+        }),
+      [],
+    ),
   ]);
 
   return (

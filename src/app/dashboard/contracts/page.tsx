@@ -15,6 +15,7 @@ import {
 } from "@/components/forms/construction-forms";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { formatCurrency, formatDate, statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
 
@@ -24,25 +25,37 @@ export default async function ContractsPage() {
   await requirePagePermission("projects");
 
   const [contracts, projects, contractors] = await Promise.all([
-    db.constructionContract.findMany({
-      include: {
-        project: true,
-        contractor: true,
-        specifications: { orderBy: { sortOrder: "asc" } },
-        ipcs: { orderBy: { createdAt: "desc" } },
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-    db.constructionProject.findMany({
-      where: { deletedAt: null },
-      select: { id: true, name: true, code: true },
-      orderBy: { name: "asc" },
-    }),
-    db.contractor.findMany({
-      where: { deletedAt: null },
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    }),
+    safeQuery(
+      () =>
+        db.constructionContract.findMany({
+          include: {
+            project: true,
+            contractor: true,
+            specifications: { orderBy: { sortOrder: "asc" } },
+            ipcs: { orderBy: { createdAt: "desc" } },
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+      [],
+    ),
+    safeQuery(
+      () =>
+        db.constructionProject.findMany({
+          where: { deletedAt: null },
+          select: { id: true, name: true, code: true },
+          orderBy: { name: "asc" },
+        }),
+      [],
+    ),
+    safeQuery(
+      () =>
+        db.contractor.findMany({
+          where: { deletedAt: null },
+          select: { id: true, name: true },
+          orderBy: { name: "asc" },
+        }),
+      [],
+    ),
   ]);
 
   const projectOptions = projects.map((p) => ({

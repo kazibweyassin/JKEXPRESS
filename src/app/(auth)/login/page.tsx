@@ -2,6 +2,7 @@ import Link from "next/link";
 import { LoginForm } from "@/components/auth/login-form";
 import { Logo } from "@/components/brand/logo";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { shouldSkipDatabase } from "@/lib/db-available";
 
 export const metadata = { title: "Sign in" };
 
@@ -33,6 +34,13 @@ export default async function LoginPage({
           </CardHeader>
           <CardContent>
             <LoginForm callbackUrl={params.callbackUrl} />
+            {shouldSkipDatabase() ? (
+              <p className="mt-4 rounded-md bg-navy-50 px-3 py-2 text-center text-xs text-navy-800">
+                Database is offline. Sign in with{" "}
+                <span className="font-medium">admin@jkexpress.ug</span> /{" "}
+                <span className="font-medium">Password123!</span>
+              </p>
+            ) : null}
             <p className="mt-6 text-center text-sm">
               <Link href="/" className="text-navy-800 hover:underline">
                 ← Back to website

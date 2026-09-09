@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RecordPaymentForm } from "@/components/forms/record-payment-form";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { formatCurrency, formatDate, statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
 
@@ -23,31 +24,39 @@ export default async function PaymentsPage() {
   await requirePagePermission("payments");
 
   const [payments, unpaidInvoices] = await Promise.all([
-    db.payment.findMany({
-      where: { deletedAt: null },
-      include: {
-        allocations: {
-          include: { invoice: { select: { invoiceNumber: true } } },
-        },
-      },
-      orderBy: { paymentDate: "desc" },
-      take: 100,
-    }),
-    db.invoice.findMany({
-      where: {
-        deletedAt: null,
-        status: { in: ["PENDING", "PARTIAL", "OVERDUE"] },
-        balance: { gt: 0 },
-      },
-      orderBy: { dueDate: "asc" },
-      take: 50,
-      select: {
-        id: true,
-        invoiceNumber: true,
-        balance: true,
-        currency: true,
-      },
-    }),
+    safeQuery(
+      () =>
+        db.payment.findMany({
+          where: { deletedAt: null },
+          include: {
+            allocations: {
+              include: { invoice: { select: { invoiceNumber: true } } },
+            },
+          },
+          orderBy: { paymentDate: "desc" },
+          take: 100,
+        }),
+      [],
+    ),
+    safeQuery(
+      () =>
+        db.invoice.findMany({
+          where: {
+            deletedAt: null,
+            status: { in: ["PENDING", "PARTIAL", "OVERDUE"] },
+            balance: { gt: 0 },
+          },
+          orderBy: { dueDate: "asc" },
+          take: 50,
+          select: {
+            id: true,
+            invoiceNumber: true,
+            balance: true,
+            currency: true,
+          },
+        }),
+      [],
+    ),
   ]);
 
   return (

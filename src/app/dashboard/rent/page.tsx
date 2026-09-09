@@ -13,6 +13,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { formatCurrency, formatDate, statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
 
@@ -21,20 +22,24 @@ export const metadata = { title: "Rent invoices" };
 export default async function RentPage() {
   await requirePagePermission("rent");
 
-  const invoices = await db.invoice.findMany({
-    where: { deletedAt: null },
-    include: {
-      lease: {
+  const invoices = await safeQuery(
+    () =>
+      db.invoice.findMany({
+        where: { deletedAt: null },
         include: {
-          tenant: true,
-          unit: true,
-          property: true,
+          lease: {
+            include: {
+              tenant: true,
+              unit: true,
+              property: true,
+            },
+          },
         },
-      },
-    },
-    orderBy: { dueDate: "desc" },
-    take: 100,
-  });
+        orderBy: { dueDate: "desc" },
+        take: 100,
+      }),
+    [],
+  );
 
   return (
     <div>

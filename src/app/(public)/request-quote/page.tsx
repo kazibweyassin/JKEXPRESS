@@ -2,7 +2,14 @@ import { PublicLeadForm } from "@/components/forms/public-lead-form";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHero } from "@/components/ui/page-hero";
 
-export const metadata = { title: "Request a Quotation" };
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({
+  title: "Request a Construction or Real Estate Quote",
+  description:
+    "Request a quotation from JK Express for construction, property sales, leasing or management services in Uganda.",
+  path: "/request-quote",
+});
 
 export default function RequestQuotePage() {
   return (

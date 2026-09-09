@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireSession } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { cn, formatDateTime } from "@/lib/utils";
 import {
   markAllNotificationsRead,
@@ -16,11 +17,15 @@ export const metadata = { title: "Notifications" };
 
 export default async function NotificationsPage() {
   const session = await requireSession("/dashboard/notifications");
-  const notifications = await db.notification.findMany({
-    where: { userId: session.user.id },
-    orderBy: { createdAt: "desc" },
-    take: 50,
-  });
+  const notifications = await safeQuery(
+    () =>
+      db.notification.findMany({
+        where: { userId: session.user.id },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      }),
+    [],
+  );
   const unread = notifications.filter((item) => !item.isRead).length;
 
   return (

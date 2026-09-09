@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
+import { getSiteUrl, SITE } from "@/lib/seo";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,12 +15,49 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteUrl()),
   title: {
     default: "JK Express | Construction, Real Estate & Property Management",
     template: "%s | JK Express",
   },
-  description:
-    "JK Express Realtors & Developers Ltd. — building construction & consultancy, real estate and property management across Uganda.",
+  description: SITE.description,
+  applicationName: SITE.name,
+  keywords: [
+    "JK Express",
+    "JK Express Realtors",
+    "construction Uganda",
+    "real estate Kampala",
+    "property management Uganda",
+    "houses for sale Kampala",
+    "apartments for rent Kampala",
+    "construction company Entebbe",
+    "Jinja real estate",
+  ],
+  authors: [{ name: SITE.legalName, url: getSiteUrl() }],
+  creator: SITE.legalName,
+  publisher: SITE.legalName,
+  category: "real estate",
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    locale: "en_UG",
+    url: getSiteUrl(),
+    siteName: SITE.name,
+    title: "JK Express | Construction, Real Estate & Property Management",
+    description: SITE.description,
+    images: [{ url: SITE.logo, alt: SITE.legalName }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "JK Express | Construction, Real Estate & Property Management",
+    description: SITE.description,
+    images: [SITE.logo],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },

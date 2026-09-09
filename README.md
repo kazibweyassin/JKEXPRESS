@@ -34,7 +34,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 Password for all demo users: **`Password123!`**
 
-| Email | Role |
+| Email | Role |Password123!
 | --- | --- |
 | admin@jkexpress.ug | Super Administrator |
 | md@jkexpress.ug | Managing Director |

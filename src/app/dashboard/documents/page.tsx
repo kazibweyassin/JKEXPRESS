@@ -11,6 +11,7 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { formatDate, statusLabel } from "@/lib/utils";
 import { FolderOpen } from "lucide-react";
 
@@ -18,12 +19,16 @@ export const metadata = { title: "Documents" };
 
 export default async function DocumentsPage() {
   await requirePagePermission("documents");
-  const documents = await db.document.findMany({
-    where: { deletedAt: null },
-    include: { uploadedBy: true, property: true, project: true },
-    orderBy: { createdAt: "desc" },
-    take: 100,
-  });
+  const documents = await safeQuery(
+    () =>
+      db.document.findMany({
+        where: { deletedAt: null },
+        include: { uploadedBy: true, property: true, project: true },
+        orderBy: { createdAt: "desc" },
+        take: 100,
+      }),
+    [],
+  );
 
   return (
     <div>

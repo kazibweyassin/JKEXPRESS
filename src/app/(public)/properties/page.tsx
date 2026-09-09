@@ -8,8 +8,15 @@ import { PropertyCard } from "@/components/ui/property-card";
 import { Select } from "@/components/ui/select";
 import { listPublishedProperties } from "@/lib/public-listings";
 import { cn } from "@/lib/utils";
+import { JsonLd } from "@/components/seo/json-ld";
+import { itemListJsonLd, pageMeta } from "@/lib/seo";
 
-export const metadata = { title: "Properties" };
+export const metadata = pageMeta({
+  title: "Properties for Sale and Rent in Uganda",
+  description:
+    "Browse homes, apartments, land and commercial listings for sale and rent in Kampala, Entebbe, Wakiso and Jinja with JK Express.",
+  path: "/properties",
+});
 
 export default async function PropertiesPage({
   searchParams,
@@ -43,6 +50,16 @@ export default async function PropertiesPage({
 
   return (
     <div>
+      <JsonLd
+        data={itemListJsonLd(
+          "JK Express property listings",
+          "/properties",
+          properties.map((p) => ({
+            name: p.title,
+            path: `/properties/${p.slug}`,
+          })),
+        )}
+      />
       <PageHero
         eyebrow="Listings"
         title="Properties for sale and rent"

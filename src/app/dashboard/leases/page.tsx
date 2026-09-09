@@ -13,6 +13,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { daysUntil, formatCurrency, formatDate, statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
 import { cn } from "@/lib/utils";
@@ -25,16 +26,20 @@ export default async function LeasesPage() {
   const now = new Date();
   const in90 = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
 
-  const leases = await db.lease.findMany({
-    where: { deletedAt: null },
-    include: {
-      tenant: true,
-      unit: true,
-      property: true,
-    },
-    orderBy: { endDate: "asc" },
-    take: 100,
-  });
+  const leases = await safeQuery(
+    () =>
+      db.lease.findMany({
+        where: { deletedAt: null },
+        include: {
+          tenant: true,
+          unit: true,
+          property: true,
+        },
+        orderBy: { endDate: "asc" },
+        take: 100,
+      }),
+    [],
+  );
 
   return (
     <div>

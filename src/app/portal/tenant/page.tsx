@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { formatCurrency, formatDate, statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
 import { createMaintenanceTicket } from "@/app/actions/maintenance";
@@ -27,9 +28,10 @@ export default async function TenantPortalPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const tenant = await db.tenant.findUnique({
-    where: { userId: session.user.id },
-  });
+  const tenant = await safeQuery(
+    () => db.tenant.findUnique({ where: { userId: session.user.id } }),
+    null,
+  );
 
   if (!tenant && session.user.role.slug !== "super-administrator") {
     return (
@@ -41,39 +43,55 @@ export default async function TenantPortalPage() {
 
   const tenantId = tenant?.id;
   const lease = tenantId
-    ? await db.lease.findFirst({
-        where: {
-          tenantId,
-          status: { in: ["ACTIVE", "EXPIRING"] },
-          deletedAt: null,
-        },
-        include: { property: true, unit: true },
-        orderBy: { startDate: "desc" },
-      })
+    ? await safeQuery(
+        () =>
+          db.lease.findFirst({
+            where: {
+              tenantId,
+              status: { in: ["ACTIVE", "EXPIRING"] },
+              deletedAt: null,
+            },
+            include: { property: true, unit: true },
+            orderBy: { startDate: "desc" },
+          }),
+        null,
+      )
     : null;
 
   const invoices = tenantId
-    ? await db.invoice.findMany({
-        where: { tenantId, deletedAt: null },
-        orderBy: { dueDate: "desc" },
-        take: 12,
-      })
+    ? await safeQuery(
+        () =>
+          db.invoice.findMany({
+            where: { tenantId, deletedAt: null },
+            orderBy: { dueDate: "desc" },
+            take: 12,
+          }),
+        [],
+      )
     : [];
 
   const payments = tenantId
-    ? await db.payment.findMany({
-        where: { tenantId, deletedAt: null },
-        orderBy: { paymentDate: "desc" },
-        take: 12,
-      })
+    ? await safeQuery(
+        () =>
+          db.payment.findMany({
+            where: { tenantId, deletedAt: null },
+            orderBy: { paymentDate: "desc" },
+            take: 12,
+          }),
+        [],
+      )
     : [];
 
   const tickets = tenantId
-    ? await db.maintenanceTicket.findMany({
-        where: { tenantId, deletedAt: null },
-        orderBy: { reportedAt: "desc" },
-        take: 10,
-      })
+    ? await safeQuery(
+        () =>
+          db.maintenanceTicket.findMany({
+            where: { tenantId, deletedAt: null },
+            orderBy: { reportedAt: "desc" },
+            take: 10,
+          }),
+        [],
+      )
     : [];
 
   return (

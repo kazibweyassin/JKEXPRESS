@@ -108,6 +108,13 @@ export function PropertyForm() {
           <Input id="parkingSpaces" name="parkingSpaces" type="number" min={0} />
         </div>
       </div>
+      <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <Label htmlFor="images">Property images</Label>
+        <Input id="images" name="images" type="file" accept="image/jpeg,image/png,image/webp" multiple />
+        <p className="text-xs leading-5 text-slate-500">
+          Add up to 8 JPEG, PNG or WebP images, maximum 5 MB each. The first selected image becomes the primary listing image.
+        </p>
+      </div>
       <div className="flex flex-wrap gap-6">
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="isFeatured" className="rounded border-slate-300" />

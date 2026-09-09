@@ -17,6 +17,12 @@ import {
 import { formatCurrency, statusLabel } from "@/lib/utils";
 import { propertyGalleryImages } from "@/lib/property-images";
 import { whatsappLink } from "@/lib/whatsapp";
+import { JsonLd } from "@/components/seo/json-ld";
+import {
+  breadcrumbJsonLd,
+  pageMeta,
+  propertyJsonLd,
+} from "@/lib/seo";
 
 export async function generateMetadata({
   params,
@@ -25,7 +31,16 @@ export async function generateMetadata({
 }) {
   const { slug } = await params;
   const property = await getPropertyBySlug(slug);
-  return { title: property?.title ?? "Property" };
+  if (!property) return { title: "Property" };
+  const kind = property.listingType === "SALE" ? "for sale" : "for rent";
+  return pageMeta({
+    title: `${property.title} ${kind} in ${property.city}`,
+    description:
+      property.description.slice(0, 160) ||
+      `${property.title} ${kind} in ${property.city}, Uganda.`,
+    path: `/properties/${property.slug}`,
+    image: property.images[0]?.url,
+  });
 }
 
 export default async function PropertyDetailPage({
@@ -59,6 +74,14 @@ export default async function PropertyDetailPage({
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <JsonLd data={propertyJsonLd(property)} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Properties", path: "/properties" },
+          { name: property.title, path: `/properties/${property.slug}` },
+        ])}
+      />
       <div className="mb-6">
         <Link href="/properties" className="text-sm text-navy-700 hover:underline">
           ← All properties

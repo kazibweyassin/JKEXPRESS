@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { formatDate, statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
 
@@ -17,10 +18,14 @@ export const metadata = { title: "Equipment" };
 
 export default async function EquipmentPage() {
   await requirePagePermission("equipment");
-  const equipment = await db.equipment.findMany({
-    where: { deletedAt: null },
-    orderBy: { code: "asc" },
-  });
+  const equipment = await safeQuery(
+    () =>
+      db.equipment.findMany({
+        where: { deletedAt: null },
+        orderBy: { code: "asc" },
+      }),
+    [],
+  );
 
   return (
     <div>

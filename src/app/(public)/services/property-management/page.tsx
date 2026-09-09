@@ -13,11 +13,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { getCompanySettings } from "@/lib/company";
 
-export const metadata = {
-  title: "Property Management | JK Express",
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({
+  title: "Property Management in Uganda",
   description:
-    "Professional property management — leasing, collections, maintenance and owner reporting.",
-};
+    "JK Express property management: leasing, rent collection, maintenance and transparent owner reporting in Kampala and beyond.",
+  path: "/services/property-management",
+});
 
 export default async function PropertyManagementServicePage() {
   const company = await getCompanySettings();

@@ -1,4 +1,11 @@
-export const metadata = { title: "Privacy Policy" };
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({
+  title: "Privacy Policy",
+  description:
+    "How JK Express collects, uses and protects personal information submitted through our website and client portals.",
+  path: "/privacy",
+});
 
 export default function PrivacyPage() {
   return (

@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/table";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
+import { isDatabaseAvailable } from "@/lib/db-available";
+import { safeQuery } from "@/lib/safe-query";
 import { formatCurrency, formatDate, statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
 
@@ -29,30 +31,30 @@ export const metadata = { title: "Dashboard" };
 
 function fetchDashboardData(now: Date, in90: Date) {
   return Promise.all([
-    db.constructionProject.count({ where: { status: "ACTIVE", deletedAt: null } }),
-    db.constructionProject.count({ where: { status: "COMPLETED", deletedAt: null } }),
-    db.property.count({ where: { deletedAt: null } }),
-    db.property.count({ where: { status: "AVAILABLE", deletedAt: null } }),
-    db.unit.count({ where: { status: "OCCUPIED", deletedAt: null } }),
-    db.unit.count({ where: { status: "VACANT", deletedAt: null } }),
-    db.invoice.aggregate({ _sum: { totalAmount: true }, where: { type: "RENT", deletedAt: null } }),
-    db.payment.aggregate({ _sum: { amount: true }, where: { status: "COMPLETED", deletedAt: null } }),
-    db.invoice.aggregate({
+    safeQuery(() => db.constructionProject.count({ where: { status: "ACTIVE", deletedAt: null } }), 0),
+    safeQuery(() => db.constructionProject.count({ where: { status: "COMPLETED", deletedAt: null } }), 0),
+    safeQuery(() => db.property.count({ where: { deletedAt: null } }), 0),
+    safeQuery(() => db.property.count({ where: { status: "AVAILABLE", deletedAt: null } }), 0),
+    safeQuery(() => db.unit.count({ where: { status: "OCCUPIED", deletedAt: null } }), 0),
+    safeQuery(() => db.unit.count({ where: { status: "VACANT", deletedAt: null } }), 0),
+    safeQuery(() => db.invoice.aggregate({ _sum: { totalAmount: true }, where: { type: "RENT", deletedAt: null } }), { _sum: { totalAmount: null } }),
+    safeQuery(() => db.payment.aggregate({ _sum: { amount: true }, where: { status: "COMPLETED", deletedAt: null } }), { _sum: { amount: null } }),
+    safeQuery(() => db.invoice.aggregate({
       _sum: { balance: true },
       where: { deletedAt: null, status: { in: ["PENDING", "PARTIAL", "OVERDUE"] } },
-    }),
-    db.maintenanceTicket.count({
+    }), { _sum: { balance: null } }),
+    safeQuery(() => db.maintenanceTicket.count({
       where: { status: { notIn: ["CLOSED", "CANCELLED", "COMPLETED"] }, deletedAt: null },
-    }),
-    db.lease.findMany({
+    }), 0),
+    safeQuery(() => db.lease.findMany({
       where: { status: { in: ["ACTIVE", "EXPIRING"] }, endDate: { lte: in90, gte: now }, deletedAt: null },
       include: { tenant: true, unit: true, property: true },
       take: 5,
       orderBy: { endDate: "asc" },
-    }),
-    db.purchaseRequest.count({ where: { status: { in: ["SUBMITTED", "PENDING_APPROVAL", "PM_REVIEW"] } } }),
-    db.lead.findMany({ where: { deletedAt: null }, orderBy: { createdAt: "desc" }, take: 5 }),
-    db.auditLog.findMany({ orderBy: { createdAt: "desc" }, take: 8, include: { user: true } }),
+    }), []),
+    safeQuery(() => db.purchaseRequest.count({ where: { status: { in: ["SUBMITTED", "PENDING_APPROVAL", "PM_REVIEW"] } } }), 0),
+    safeQuery(() => db.lead.findMany({ where: { deletedAt: null }, orderBy: { createdAt: "desc" }, take: 5 }), []),
+    safeQuery(() => db.auditLog.findMany({ orderBy: { createdAt: "desc" }, take: 8, include: { user: true } }), []),
   ]);
 }
 
@@ -76,6 +78,7 @@ export default async function DashboardPage() {
   let dashboardData: DashboardData;
   try {
     dashboardData = await fetchDashboardData(now, in90);
+    databaseOffline = !(await isDatabaseAvailable());
   } catch {
     databaseOffline = true;
     dashboardData = EMPTY_DASHBOARD_DATA;

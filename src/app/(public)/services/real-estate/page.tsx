@@ -13,11 +13,14 @@ import { PageHeader } from "@/components/ui/page-header";
 import { PropertyCard } from "@/components/ui/property-card";
 import { getFeaturedProperties } from "@/lib/public-listings";
 
-export const metadata = {
-  title: "Real Estate Services | JK Express",
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({
+  title: "Real Estate Sales and Rentals in Uganda",
   description:
-    "Buy, sell and rent properties across Uganda with JK Express brokerage and advisory.",
-};
+    "Buy, sell or rent homes, land and commercial property in Kampala, Entebbe and Jinja with JK Express brokerage.",
+  path: "/services/real-estate",
+});
 
 export default async function RealEstateServicePage() {
   const featured = await getFeaturedProperties(3);

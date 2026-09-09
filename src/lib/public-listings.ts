@@ -43,13 +43,19 @@ export type PublicProject = {
   name: string;
   description: string;
   clientName: string | null;
+  clientType: string;
   location: string | null;
   city: string | null;
   status: string;
+  sector: string;
   completionPercentage: number;
   contractValue: number | null;
   startDate: Date | null;
   expectedCompletion: Date | null;
+  yearCommissioned: number | null;
+  yearCompleted: number | null;
+  grossArea: string | null;
+  scope: string;
   featuredImage: string | null;
   updatedAt: Date;
   phases: { id: string; name: string; status: string }[];
@@ -255,9 +261,16 @@ export const DEMO_PROJECTS: PublicProject[] = [
     description:
       "5-storey mixed-use office complex with basement parking in Kololo, Kampala.",
     clientName: "Horizon Investments Ltd",
+    clientType: "Private developer",
     location: "Kololo, Kampala",
     city: "Kampala",
     status: "ACTIVE",
+    sector: "OFFICES",
+    yearCommissioned: 2025,
+    yearCompleted: null,
+    grossArea: "8,400 sqm",
+    scope:
+      "Foundations, concrete superstructure, basement parking, curtain walling, services and finishes for a 5-storey mixed-use office block.",
     completionPercentage: 35,
     contractValue: 12500000000,
     startDate: new Date("2025-01-15"),
@@ -278,9 +291,16 @@ export const DEMO_PROJECTS: PublicProject[] = [
     description:
       "12-unit residential estate completed in Entebbe with landscaped courtyards and secure perimeter.",
     clientName: "JK Express Developments",
+    clientType: "In-house development",
     location: "Entebbe Road corridor, Entebbe",
     city: "Entebbe",
     status: "COMPLETED",
+    sector: "RESIDENTIAL",
+    yearCommissioned: 2023,
+    yearCompleted: 2024,
+    grossArea: "12 units",
+    scope:
+      "Twelve residential units, landscaped courtyards, perimeter security, internal roads and handover snagging.",
     completionPercentage: 100,
     contractValue: 4800000000,
     startDate: new Date("2023-04-01"),
@@ -301,9 +321,16 @@ export const DEMO_PROJECTS: PublicProject[] = [
     description:
       "4-storey apartment block with 16 units, panoramic hill views and basement services in Naguru, Kampala.",
     clientName: "Summit Homes Ltd",
-    location: "Naguru, Kampala",
+    clientType: "Private developer",
+    location: "Naguru Hill Drive, Kampala",
     city: "Kampala",
     status: "ACTIVE",
+    sector: "RESIDENTIAL",
+    yearCommissioned: 2025,
+    yearCompleted: null,
+    grossArea: "16 units · 4 storeys",
+    scope:
+      "Apartment frame, basement services, envelope, finishes and external works on Naguru Hill.",
     completionPercentage: 48,
     contractValue: 7200000000,
     startDate: new Date("2025-03-01"),
@@ -320,9 +347,16 @@ export const DEMO_PROJECTS: PublicProject[] = [
     description:
       "Ground-floor retail with upper-level offices and apartments along the Bugolobi commercial strip.",
     clientName: "Lakeside Property Group",
-    location: "Bugolobi, Kampala",
+    clientType: "Retail & mixed-use",
+    location: "Luthuli Avenue, Bugolobi",
     city: "Kampala",
     status: "ACTIVE",
+    sector: "MIXED_USE",
+    yearCommissioned: 2025,
+    yearCompleted: null,
+    grossArea: "6,200 sqm",
+    scope:
+      "Ground-floor retail shells, upper offices and apartments, services risers and roadside elevation.",
     completionPercentage: 22,
     contractValue: 9800000000,
     startDate: new Date("2025-02-10"),
@@ -339,9 +373,16 @@ export const DEMO_PROJECTS: PublicProject[] = [
     description:
       "Six detached luxury villas with high finishes, compound parking and servant quarters in Muyenga.",
     clientName: "Private client consortium",
+    clientType: "Private households",
     location: "Muyenga, Kampala",
     city: "Kampala",
     status: "COMPLETED",
+    sector: "RESIDENTIAL",
+    yearCommissioned: 2023,
+    yearCompleted: 2025,
+    grossArea: "6 villas",
+    scope:
+      "Six detached villas, high finishes, compound parking, servant quarters and perimeter works.",
     completionPercentage: 100,
     contractValue: 6100000000,
     startDate: new Date("2023-09-01"),
@@ -358,15 +399,74 @@ export const DEMO_PROJECTS: PublicProject[] = [
     description:
       "Three-storey commercial block near the Nile corridor with flexible retail shells and first-floor offices.",
     clientName: "Eastern Trade Holdings",
+    clientType: "Retail & commercial",
     location: "Main Street corridor, Jinja",
     city: "Jinja",
     status: "ACTIVE",
+    sector: "COMMERCIAL",
+    yearCommissioned: 2025,
+    yearCompleted: null,
+    grossArea: "3,100 sqm",
+    scope:
+      "Three-storey commercial block with flexible retail shells, first-floor offices and associated external works.",
     completionPercentage: 28,
     contractValue: 3500000000,
     startDate: new Date("2025-05-01"),
     expectedCompletion: new Date("2026-08-15"),
     featuredImage: "/site-photos/site-07.jpeg",
     updatedAt: new Date("2026-01-20"),
+    phases: [],
+  },
+  {
+    id: "prj-namanve-logistics-shed",
+    slug: "namanve-logistics-shed",
+    code: "PRJ-2024-033",
+    name: "Namanve Logistics Shed",
+    description:
+      "Steel-frame warehouse shell with yard circulation, loading bays and office annex at Namanve industrial park.",
+    clientName: "EastPark Logistics",
+    clientType: "Industrial occupier",
+    location: "Namanve Industrial Park, Mukono",
+    city: "Mukono",
+    status: "COMPLETED",
+    sector: "WAREHOUSING",
+    yearCommissioned: 2023,
+    yearCompleted: 2024,
+    grossArea: "4,800 sqm",
+    scope:
+      "Foundations, steel superstructure, roofing, loading docks, office annex and external hardstanding.",
+    completionPercentage: 100,
+    contractValue: 2900000000,
+    startDate: new Date("2023-06-01"),
+    expectedCompletion: new Date("2024-08-30"),
+    featuredImage: "/site-photos/site-09.jpeg",
+    updatedAt: new Date("2024-08-30"),
+    phases: [],
+  },
+  {
+    id: "prj-ntinda-civic-centre-fitout",
+    slug: "ntinda-civic-centre-fitout",
+    code: "PRJ-2025-041",
+    name: "Ntinda Civic Centre Fit-out",
+    description:
+      "Interior fit-out and services upgrade for an institutional office floor in Ntinda, including partitions, MEP and finishes.",
+    clientName: "Civic Holdings Ltd",
+    clientType: "Institution",
+    location: "Ntinda, Kampala",
+    city: "Kampala",
+    status: "ACTIVE",
+    sector: "INSTITUTIONAL",
+    yearCommissioned: 2025,
+    yearCompleted: null,
+    grossArea: "1,250 sqm",
+    scope:
+      "Strip-out, partitions, electrical and mechanical services, joinery, finishes and commissioning.",
+    completionPercentage: 41,
+    contractValue: 980000000,
+    startDate: new Date("2025-04-01"),
+    expectedCompletion: new Date("2026-02-28"),
+    featuredImage: "/site-photos/site-11.jpeg",
+    updatedAt: new Date("2026-02-10"),
     phases: [],
   },
 ];
@@ -455,8 +555,11 @@ export async function getSimilarProperties(
     .slice(0, take);
 }
 
-export async function listPublishedProjects(): Promise<PublicProject[]> {
-  return DEMO_PROJECTS;
+export async function listPublishedProjects(
+  sector?: string,
+): Promise<PublicProject[]> {
+  if (!sector) return DEMO_PROJECTS;
+  return DEMO_PROJECTS.filter((project) => project.sector === sector);
 }
 
 export async function getProjectBySlug(

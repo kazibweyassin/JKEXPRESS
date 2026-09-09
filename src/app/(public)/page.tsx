@@ -22,6 +22,17 @@ import {
 } from "@/lib/public-listings";
 import { projectCoverImage } from "@/lib/site-photos";
 import HeroSlider from "@/components/ui/hero-slider";
+import { JsonLd } from "@/components/seo/json-ld";
+import { itemListJsonLd, pageMeta } from "@/lib/seo";
+import { ClientsStrip } from "@/components/ui/clients-strip";
+import { CredentialsStrip } from "@/components/ui/credentials-strip";
+
+export const metadata = pageMeta({
+  title: "Construction, Real Estate & Property Management in Uganda",
+  description:
+    "JK Express builds, sells, leases and manages property across Kampala, Entebbe and Jinja — construction, brokerage and property management under one roof.",
+  path: "/",
+});
 
 export default async function HomePage() {
   const company = await getCompanySettings();
@@ -59,6 +70,18 @@ export default async function HomePage() {
 
   return (
     <div>
+      <JsonLd
+        data={itemListJsonLd("Featured properties", "/properties", featuredProperties.map((p) => ({
+          name: p.title,
+          path: `/properties/${p.slug}`,
+        })))}
+      />
+      <JsonLd
+        data={itemListJsonLd("Construction projects", "/projects", projects.slice(0, 6).map((p) => ({
+          name: p.name,
+          path: `/projects/${p.slug}`,
+        })))}
+      />
       <section className="relative overflow-hidden text-white">
         <HeroSlider background>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -88,21 +111,7 @@ export default async function HomePage() {
         </HeroSlider>
       </section>
 
-      <section className="border-b border-slate-200 bg-white">
-        <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
-          {[
-            { title: "Kampala · Entebbe · Jinja", text: "Local teams across Uganda’s growth corridors." },
-            { title: "Site-supervised delivery", text: "Milestones, reporting and finish standards." },
-            { title: "Sales & leasing", text: "Homes, land and commercial assets." },
-            { title: "Owner reporting", text: "Rent, maintenance and occupancy in one view." },
-          ].map((item) => (
-            <div key={item.title}>
-              <p className="text-sm font-semibold text-navy-900">{item.title}</p>
-              <p className="mt-1 text-sm text-slate-500">{item.text}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      <CredentialsStrip />
 
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="mb-10 max-w-2xl">
@@ -146,6 +155,8 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+
+      <ClientsStrip />
 
       <section className="bg-slate-100/80 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

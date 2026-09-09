@@ -38,7 +38,7 @@ describe("local listing catalog", () => {
 
   it("uses Unsplash for properties and local site photos for projects", () => {
     expect(DEMO_PROPERTIES).toHaveLength(6);
-    expect(DEMO_PROJECTS).toHaveLength(6);
+    expect(DEMO_PROJECTS).toHaveLength(8);
     expect(
       DEMO_PROPERTIES.every((property) =>
         property.images.every((image) =>

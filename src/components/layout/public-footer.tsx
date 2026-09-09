@@ -7,6 +7,9 @@ const columns = [
     title: "Services",
     links: [
       { href: "/services/construction", label: "Construction" },
+      { href: "/services/construction/retaining-structures", label: "Retaining structures" },
+      { href: "/services/construction/construction-materials", label: "Construction materials" },
+      { href: "/services/construction/waterproofing", label: "Waterproofing" },
       { href: "/services/real-estate", label: "Real estate" },
       { href: "/services/property-management", label: "Property management" },
       { href: "/properties", label: "Browse properties" },

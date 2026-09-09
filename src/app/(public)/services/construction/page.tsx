@@ -18,11 +18,19 @@ import { GALLERY_SITE_PHOTOS, projectCoverImage } from "@/lib/site-photos";
 import { statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
 
-export const metadata = {
-  title: "Construction Services | JK Express",
+import { pageMeta } from "@/lib/seo";
+import { PROJECT_SECTORS } from "@/lib/trust";
+import { ClientsStrip } from "@/components/ui/clients-strip";
+import { CredentialsStrip } from "@/components/ui/credentials-strip";
+import { ProfileCta } from "@/components/ui/profile-cta";
+import { CONSTRUCTION_SERVICES } from "@/lib/construction-services";
+
+export const metadata = pageMeta({
+  title: "Construction Services in Uganda",
   description:
-    "Residential, commercial and institutional construction with disciplined project controls.",
-};
+    "Residential, commercial and institutional construction from JK Express — BOQs, site reporting and milestone-controlled delivery.",
+  path: "/services/construction",
+});
 
 export default async function ConstructionServicePage() {
   const projects = (await listPublishedProjects()).slice(0, 4);
@@ -77,30 +85,65 @@ export default async function ConstructionServicePage() {
             >
               <Link href="/projects">View projects</Link>
             </Button>
+            <Button
+              variant="outline"
+              className="border-white/30 bg-white/10 text-white hover:bg-white/15"
+              asChild
+            >
+              <a href="/jk-express-company-profile.pdf" download>
+                Download company profile
+              </a>
+            </Button>
           </div>
         </div>
       </section>
 
+      <CredentialsStrip />
+
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <PageHeader
-          title="What we build"
-          description="From private residences to multi-unit commercial works — scoped, scheduled and supervised."
+          title="Six construction disciplines. One accountable team."
+          description="Engage JK Express for a complete build or for a specialist package within a larger project."
         />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            "Residential homes & apartments",
-            "Commercial & office fit-outs",
-            "Retail and mixed-use shells",
-            "Institutional renovations",
-          ].map((item) => (
-            <div
-              key={item}
-              className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-4"
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {CONSTRUCTION_SERVICES.map((service) => (
+            <Link key={service.slug} href={`/services/construction/${service.slug}`} className="group overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:-translate-y-0.5 hover:shadow-lg">
+              <div className="relative aspect-[16/9] overflow-hidden bg-slate-200">
+                <Image src={service.image} alt={service.title} fill className="object-cover transition duration-500 group-hover:scale-[1.04]" sizes="(max-width: 768px) 100vw, 33vw" />
+                <div className="absolute inset-0 bg-gradient-to-t from-navy-950/75 to-transparent" />
+                <span className="absolute bottom-3 left-4 text-sm font-bold text-gold-400">{service.number}</span>
+              </div>
+              <div className="p-5">
+                <h2 className="text-lg font-semibold text-navy-900">{service.title}</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{service.summary}</p>
+                <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-gold-700">Explore service <ArrowRight className="h-4 w-4" /></span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="border-y border-slate-200 bg-slate-50 py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <PageHeader
+          title="What we build"
+          description="From private residences to multi-unit commercial works — scoped, scheduled and supervised. Filter the portfolio by sector."
+        />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {PROJECT_SECTORS.map((item) => (
+            <Link
+              key={item.key}
+              href={`/projects?sector=${item.slug}`}
+              className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-4 transition hover:shadow-md hover:ring-1 hover:ring-gold-500/20"
             >
               <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-gold-600" />
-              <p className="text-sm font-medium text-navy-900">{item}</p>
-            </div>
+              <div>
+                <p className="text-sm font-medium text-navy-900">{item.label}</p>
+                <p className="mt-1 text-xs text-slate-500">View projects</p>
+              </div>
+            </Link>
           ))}
+        </div>
         </div>
       </section>
 
@@ -139,11 +182,7 @@ export default async function ConstructionServicePage() {
           <PageHeader
             title="Featured construction work"
             description="A selection of published projects from our portfolio."
-            actions={
-              <Button variant="outline" asChild>
-                <Link href="/projects">All projects</Link>
-              </Button>
-            }
+            actions={<ProfileCta />}
           />
           <div className="grid gap-4 md:grid-cols-2">
             {projects.map((project) => (
@@ -183,6 +222,8 @@ export default async function ConstructionServicePage() {
           </div>
         </section>
       ) : null}
+
+      <ClientsStrip />
 
       <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
         <div className="rounded-2xl bg-gradient-to-r from-navy-900 to-navy-800 px-8 py-12 text-white sm:px-12">

@@ -4,6 +4,7 @@ import { CompanySettingsForm } from "@/components/forms/company-settings-form";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { getCompanySettings } from "@/lib/company";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 
 export const metadata = { title: "Settings" };
 
@@ -11,9 +12,9 @@ export default async function SettingsPage() {
   await requirePagePermission("settings");
   const company = await getCompanySettings();
   const [userCount, roleCount, branchCount] = await Promise.all([
-    db.user.count({ where: { deletedAt: null } }),
-    db.role.count(),
-    db.branch.count(),
+    safeQuery(() => db.user.count({ where: { deletedAt: null } }), 0),
+    safeQuery(() => db.role.count(), 0),
+    safeQuery(() => db.branch.count(), 0),
   ]);
 
   return (

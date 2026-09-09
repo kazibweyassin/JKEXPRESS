@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { formatCurrency, statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
 
@@ -21,9 +22,10 @@ export default async function OwnerPortalPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const owner = await db.propertyOwner.findUnique({
-    where: { userId: session.user.id },
-  });
+  const owner = await safeQuery(
+    () => db.propertyOwner.findUnique({ where: { userId: session.user.id } }),
+    null,
+  );
 
   if (!owner && session.user.role.slug !== "super-administrator") {
     return (
@@ -35,13 +37,17 @@ export default async function OwnerPortalPage() {
 
   const ownerId = owner?.id;
   const properties = ownerId
-    ? await db.property.findMany({
-        where: { ownerId, deletedAt: null },
-        include: {
-          units: true,
-          expenses: { orderBy: { expenseDate: "desc" }, take: 5 },
-        },
-      })
+    ? await safeQuery(
+        () =>
+          db.property.findMany({
+            where: { ownerId, deletedAt: null },
+            include: {
+              units: true,
+              expenses: { orderBy: { expenseDate: "desc" }, take: 5 },
+            },
+          }),
+        [],
+      )
     : [];
 
   const totalUnits = properties.reduce((n, p) => n + p.units.length, 0);

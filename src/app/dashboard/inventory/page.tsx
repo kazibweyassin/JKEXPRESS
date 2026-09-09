@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { IssueStockForm } from "@/components/forms/construction-forms";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { formatCurrency, statusLabel } from "@/lib/utils";
 
 export const metadata = { title: "Stores & materials" };
@@ -19,16 +20,24 @@ export const metadata = { title: "Stores & materials" };
 export default async function InventoryPage() {
   await requirePagePermission("inventory");
   const [items, projects] = await Promise.all([
-    db.inventoryItem.findMany({
-      where: { deletedAt: null },
-      include: { warehouse: true },
-      orderBy: { name: "asc" },
-    }),
-    db.constructionProject.findMany({
-      where: { deletedAt: null },
-      select: { id: true, name: true, code: true },
-      orderBy: { name: "asc" },
-    }),
+    safeQuery(
+      () =>
+        db.inventoryItem.findMany({
+          where: { deletedAt: null },
+          include: { warehouse: true },
+          orderBy: { name: "asc" },
+        }),
+      [],
+    ),
+    safeQuery(
+      () =>
+        db.constructionProject.findMany({
+          where: { deletedAt: null },
+          select: { id: true, name: true, code: true },
+          orderBy: { name: "asc" },
+        }),
+      [],
+    ),
   ]);
 
   return (

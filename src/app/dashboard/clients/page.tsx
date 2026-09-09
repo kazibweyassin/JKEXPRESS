@@ -13,6 +13,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { formatDate, statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
 
@@ -21,14 +22,18 @@ export const metadata = { title: "Clients" };
 export default async function ClientsPage() {
   await requirePagePermission("clients");
 
-  const contacts = await db.contact.findMany({
-    where: {
-      deletedAt: null,
-      type: { in: ["CLIENT", "BUYER"] },
-    },
-    orderBy: { createdAt: "desc" },
-    take: 100,
-  });
+  const contacts = await safeQuery(
+    () =>
+      db.contact.findMany({
+        where: {
+          deletedAt: null,
+          type: { in: ["CLIENT", "BUYER"] },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 100,
+      }),
+    [],
+  );
 
   return (
     <div>

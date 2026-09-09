@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { formatCurrency, formatDate, statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
 import {
@@ -31,49 +32,61 @@ export default async function ProjectDetailDashboardPage({
 }) {
   await requirePagePermission("projects");
   const { id } = await params;
-  const project = await db.constructionProject.findFirst({
-    where: { id, deletedAt: null },
-    include: {
-      projectManager: { include: { user: true } },
-      phases: { orderBy: { sortOrder: "asc" } },
-      milestones: true,
-      tasks: {
-        include: { assignee: true },
-        orderBy: { updatedAt: "desc" },
-      },
-      siteReports: {
-        orderBy: { reportDate: "desc" },
-        take: 5,
-        include: { submittedBy: true, photos: true },
-      },
-      teamMembers: {
-        include: { employee: { include: { user: true } } },
-      },
-      subcontracts: { include: { contractor: true } },
-      weeklyReports: {
-        orderBy: { weekStarting: "desc" },
-        take: 6,
-        include: { enteredBy: true, contractor: true },
-      },
-      expenses: { orderBy: { expenseDate: "desc" }, take: 8 },
-      boqs: { include: { items: true }, orderBy: { updatedAt: "desc" } },
-      variations: { orderBy: { createdAt: "desc" } },
-      purchaseRequests: { include: { items: true }, orderBy: { createdAt: "desc" }, take: 10 },
-      contracts: { include: { ipcs: true } },
-    },
-  });
+  const project = await safeQuery(
+    () =>
+      db.constructionProject.findFirst({
+        where: { id, deletedAt: null },
+        include: {
+          projectManager: { include: { user: true } },
+          phases: { orderBy: { sortOrder: "asc" } },
+          milestones: true,
+          tasks: {
+            include: { assignee: true },
+            orderBy: { updatedAt: "desc" },
+          },
+          siteReports: {
+            orderBy: { reportDate: "desc" },
+            take: 5,
+            include: { submittedBy: true, photos: true },
+          },
+          teamMembers: {
+            include: { employee: { include: { user: true } } },
+          },
+          subcontracts: { include: { contractor: true } },
+          weeklyReports: {
+            orderBy: { weekStarting: "desc" },
+            take: 6,
+            include: { enteredBy: true, contractor: true },
+          },
+          expenses: { orderBy: { expenseDate: "desc" }, take: 8 },
+          boqs: { include: { items: true }, orderBy: { updatedAt: "desc" } },
+          variations: { orderBy: { createdAt: "desc" } },
+          purchaseRequests: { include: { items: true }, orderBy: { createdAt: "desc" }, take: 10 },
+          contracts: { include: { ipcs: true } },
+        },
+      }),
+    null,
+  );
   if (!project) notFound();
 
   const [employees, contractors] = await Promise.all([
-    db.employee.findMany({
-      where: { deletedAt: null, employmentStatus: "ACTIVE" },
-      include: { user: true },
-      orderBy: { employeeCode: "asc" },
-    }),
-    db.contractor.findMany({
-      where: { deletedAt: null, isActive: true },
-      orderBy: { name: "asc" },
-    }),
+    safeQuery(
+      () =>
+        db.employee.findMany({
+          where: { deletedAt: null, employmentStatus: "ACTIVE" },
+          include: { user: true },
+          orderBy: { employeeCode: "asc" },
+        }),
+      [],
+    ),
+    safeQuery(
+      () =>
+        db.contractor.findMany({
+          where: { deletedAt: null, isActive: true },
+          orderBy: { name: "asc" },
+        }),
+      [],
+    ),
   ]);
 
   const boqBudget = project.boqs.reduce((sum, boq) => sum + boq.items.reduce((itemSum, item) => itemSum + Number(item.estimatedTotal), 0), 0);

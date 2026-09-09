@@ -14,6 +14,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { formatDate, statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
 
@@ -22,15 +23,19 @@ export const metadata = { title: "Leads" };
 export default async function LeadsPage() {
   await requirePagePermission("leads");
 
-  const leads = await db.lead.findMany({
-    where: { deletedAt: null },
-    include: {
-      assignee: { select: { name: true, email: true } },
-      property: { select: { title: true, reference: true } },
-    },
-    orderBy: { createdAt: "desc" },
-    take: 100,
-  });
+  const leads = await safeQuery(
+    () =>
+      db.lead.findMany({
+        where: { deletedAt: null },
+        include: {
+          assignee: { select: { name: true, email: true } },
+          property: { select: { title: true, reference: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 100,
+      }),
+    [],
+  );
 
   return (
     <div>

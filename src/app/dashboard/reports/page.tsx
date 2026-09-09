@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { formatCurrency } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
 import {
@@ -35,25 +36,25 @@ export default async function ReportsPage() {
     expiringLeases,
     constructionProjects,
   ] = await Promise.all([
-    db.unit.count({ where: { status: "OCCUPIED", deletedAt: null } }),
-    db.unit.count({ where: { status: "VACANT", deletedAt: null } }),
-    db.invoice.aggregate({
+    safeQuery(() => db.unit.count({ where: { status: "OCCUPIED", deletedAt: null } }), 0),
+    safeQuery(() => db.unit.count({ where: { status: "VACANT", deletedAt: null } }), 0),
+    safeQuery(() => db.invoice.aggregate({
       _sum: { balance: true },
       where: { status: { in: ["PENDING", "PARTIAL", "OVERDUE"] }, deletedAt: null },
-    }),
-    db.payment.aggregate({
+    }), { _sum: { balance: null } }),
+    safeQuery(() => db.payment.aggregate({
       _sum: { amount: true },
       where: { status: "COMPLETED", deletedAt: null },
-    }),
-    db.maintenanceTicket.count({
+    }), { _sum: { amount: null } }),
+    safeQuery(() => db.maintenanceTicket.count({
       where: { status: { notIn: ["CLOSED", "CANCELLED", "COMPLETED"] }, deletedAt: null },
-    }),
-    db.constructionProject.count({ where: { status: "ACTIVE", deletedAt: null } }),
-    db.constructionProject.aggregate({
+    }), 0),
+    safeQuery(() => db.constructionProject.count({ where: { status: "ACTIVE", deletedAt: null } }), 0),
+    safeQuery(() => db.constructionProject.aggregate({
       _avg: { completionPercentage: true },
       where: { status: "ACTIVE", deletedAt: null },
-    }),
-    db.lease.count({
+    }), { _avg: { completionPercentage: null } }),
+    safeQuery(() => db.lease.count({
       where: {
         status: { in: ["ACTIVE", "EXPIRING"] },
         endDate: {
@@ -62,8 +63,8 @@ export default async function ReportsPage() {
         },
         deletedAt: null,
       },
-    }),
-    db.constructionProject.findMany({
+    }), 0),
+    safeQuery(() => db.constructionProject.findMany({
       where: { deletedAt: null },
       include: {
         boqs: { include: { items: true } },
@@ -73,7 +74,7 @@ export default async function ReportsPage() {
         purchaseRequests: { include: { items: true } },
       },
       orderBy: { updatedAt: "desc" },
-    }),
+    }), []),
   ]);
 
   const totalUnits = occupied + vacant;

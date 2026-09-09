@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireSession, hasSessionPermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { formatCurrency, statusLabel } from "@/lib/utils";
 
 export const metadata = { title: "Search" };
@@ -28,50 +29,62 @@ export default async function DashboardSearchPage({
   const [leads, properties, tenants] = query
     ? await Promise.all([
         canLeads
-          ? db.lead.findMany({
-              where: {
-                deletedAt: null,
-                OR: [
-                  { firstName: { contains: query } },
-                  { lastName: { contains: query } },
-                  { email: { contains: query } },
-                  { phone: { contains: query } },
-                  { reference: { contains: query } },
-                ],
-              },
-              take: 8,
-              orderBy: { createdAt: "desc" },
-            })
+          ? safeQuery(
+              () =>
+                db.lead.findMany({
+                  where: {
+                    deletedAt: null,
+                    OR: [
+                      { firstName: { contains: query } },
+                      { lastName: { contains: query } },
+                      { email: { contains: query } },
+                      { phone: { contains: query } },
+                      { reference: { contains: query } },
+                    ],
+                  },
+                  take: 8,
+                  orderBy: { createdAt: "desc" },
+                }),
+              [],
+            )
           : [],
         canProperties
-          ? db.property.findMany({
-              where: {
-                deletedAt: null,
-                OR: [
-                  { title: { contains: query } },
-                  { reference: { contains: query } },
-                  { address: { contains: query } },
-                  { city: { contains: query } },
-                ],
-              },
-              take: 8,
-              orderBy: { updatedAt: "desc" },
-            })
+          ? safeQuery(
+              () =>
+                db.property.findMany({
+                  where: {
+                    deletedAt: null,
+                    OR: [
+                      { title: { contains: query } },
+                      { reference: { contains: query } },
+                      { address: { contains: query } },
+                      { city: { contains: query } },
+                    ],
+                  },
+                  take: 8,
+                  orderBy: { updatedAt: "desc" },
+                }),
+              [],
+            )
           : [],
         canTenants
-          ? db.tenant.findMany({
-              where: {
-                deletedAt: null,
-                OR: [
-                  { firstName: { contains: query } },
-                  { lastName: { contains: query } },
-                  { email: { contains: query } },
-                  { phone: { contains: query } },
-                ],
-              },
-              take: 8,
-              orderBy: { updatedAt: "desc" },
-            })
+          ? safeQuery(
+              () =>
+                db.tenant.findMany({
+                  where: {
+                    deletedAt: null,
+                    OR: [
+                      { firstName: { contains: query } },
+                      { lastName: { contains: query } },
+                      { email: { contains: query } },
+                      { phone: { contains: query } },
+                    ],
+                  },
+                  take: 8,
+                  orderBy: { updatedAt: "desc" },
+                }),
+              [],
+            )
           : [],
       ])
     : [[], [], []];

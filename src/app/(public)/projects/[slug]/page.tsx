@@ -23,6 +23,9 @@ import { projectGalleryImages } from "@/lib/site-photos";
 import { formatCurrency, formatDate, statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
 import { whatsappLink } from "@/lib/whatsapp";
+import { JsonLd } from "@/components/seo/json-ld";
+import { breadcrumbJsonLd, pageMeta, projectJsonLd } from "@/lib/seo";
+import { sectorMeta } from "@/lib/trust";
 
 export async function generateMetadata({
   params,
@@ -31,10 +34,15 @@ export async function generateMetadata({
 }) {
   const { slug } = await params;
   const project = await getProjectBySlug(slug);
-  return {
-    title: project?.name ?? "Project",
-    description: project?.description ?? undefined,
-  };
+  if (!project) return { title: "Project" };
+  return pageMeta({
+    title: `${project.name} | Construction project`,
+    description:
+      project.description.slice(0, 160) ||
+      `${project.name} construction project in ${project.city ?? "Uganda"}.`,
+    path: `/projects/${project.slug}`,
+    image: project.featuredImage,
+  });
 }
 
 export default async function ProjectDetailPage({
@@ -82,6 +90,14 @@ export default async function ProjectDetailPage({
 
   return (
     <div>
+      <JsonLd data={projectJsonLd(project)} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Projects", path: "/projects" },
+          { name: project.name, path: `/projects/${project.slug}` },
+        ])}
+      />
       {/* Hero */}
       <section className="border-b border-slate-200 bg-navy-950 text-white">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
@@ -95,6 +111,11 @@ export default async function ProjectDetailPage({
             <Badge variant={statusVariant(project.status)}>
               {statusLabel(project.status)}
             </Badge>
+            {sectorMeta(project.sector) ? (
+              <Badge variant="outline" className="border-white/30 text-white">
+                {sectorMeta(project.sector)?.label}
+              </Badge>
+            ) : null}
             <span className="text-xs uppercase tracking-[0.16em] text-slate-400">
               {project.code}
             </span>
@@ -142,6 +163,45 @@ export default async function ProjectDetailPage({
 
         <div className="mt-10 grid gap-10 lg:grid-cols-3">
           <div className="space-y-10 lg:col-span-2">
+            <section>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-500">
+                Project details
+              </p>
+              <h2 className="mt-2 text-2xl font-bold text-navy-900">
+                Scope and facts
+              </h2>
+              <dl className="mt-5 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                {[
+                  ["Sector", sectorMeta(project.sector)?.label ?? project.sector],
+                  ["Client", project.clientName ?? "Confidential"],
+                  ["Client type", project.clientType],
+                  ["Location", [project.location, project.city].filter(Boolean).join(" · ")],
+                  ["Year commissioned", project.yearCommissioned?.toString() ?? "—"],
+                  [
+                    "Year completed",
+                    project.yearCompleted?.toString() ??
+                      (project.status === "COMPLETED" ? "—" : "In progress"),
+                  ],
+                  ["Gross area", project.grossArea ?? "—"],
+                ].map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="grid grid-cols-2 gap-4 border-b border-slate-100 px-5 py-3 last:border-b-0 sm:grid-cols-3"
+                  >
+                    <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                      {label}
+                    </dt>
+                    <dd className="text-sm font-medium text-navy-900 sm:col-span-2">
+                      {value}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+              <p className="mt-4 text-sm leading-relaxed text-slate-600">
+                {project.scope}
+              </p>
+            </section>
+
             {/* Stats */}
             <dl className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-xl border border-slate-200 bg-white p-5">

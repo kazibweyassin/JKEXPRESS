@@ -3,7 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHero } from "@/components/ui/page-hero";
 import { getPropertyById } from "@/lib/public-listings";
 
-export const metadata = { title: "Schedule a Property Viewing" };
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({
+  title: "Schedule a Property Viewing",
+  description:
+    "Book a JK Express property viewing in Kampala, Entebbe or Jinja. Our sales team will confirm a time.",
+  path: "/book-viewing",
+});
 
 export default async function BookViewingPage({
   searchParams,

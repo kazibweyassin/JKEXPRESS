@@ -11,6 +11,7 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { formatDate, statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
 import { ShoppingCart } from "lucide-react";
@@ -21,14 +22,29 @@ export const metadata = { title: "Procurement" };
 
 export default async function ProcurementPage() {
   await requirePagePermission("procurement");
-  const [requests, projects] = await Promise.all([db.purchaseRequest.findMany({
-    include: {
-      requester: true,
-      project: true,
-      items: true,
-    },
-    orderBy: { createdAt: "desc" },
-  }), db.constructionProject.findMany({ where: { deletedAt: null }, select: { id: true, code: true, name: true }, orderBy: { name: "asc" } })]);
+  const [requests, projects] = await Promise.all([
+    safeQuery(
+      () =>
+        db.purchaseRequest.findMany({
+          include: {
+            requester: true,
+            project: true,
+            items: true,
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+      [],
+    ),
+    safeQuery(
+      () =>
+        db.constructionProject.findMany({
+          where: { deletedAt: null },
+          select: { id: true, code: true, name: true },
+          orderBy: { name: "asc" },
+        }),
+      [],
+    ),
+  ]);
 
   return (
     <div>

@@ -5,7 +5,14 @@ import { MapEmbed } from "@/components/ui/map-embed";
 import { PageHero } from "@/components/ui/page-hero";
 import { getCompanySettings } from "@/lib/company";
 
-export const metadata = { title: "Contact Us" };
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({
+  title: "Contact JK Express in Kampala",
+  description:
+    "Talk to JK Express about construction, buying, selling or property management in Kampala, Entebbe and Jinja. Phone, WhatsApp and office contact.",
+  path: "/contact",
+});
 
 export default async function ContactPage() {
   const company = await getCompanySettings();

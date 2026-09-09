@@ -4,22 +4,27 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireSession } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { formatCurrency } from "@/lib/utils";
 
 export const metadata = { title: "Buyer portal" };
 
 export default async function BuyerPortalPage() {
   await requireSession("/portal/buyer");
-  const properties = await db.property.findMany({
-    where: {
-      isPublished: true,
-      listingType: "SALE",
-      deletedAt: null,
-    },
-    include: { images: { where: { isPrimary: true }, take: 1 } },
-    orderBy: { listedAt: "desc" },
-    take: 12,
-  });
+  const properties = await safeQuery(
+    () =>
+      db.property.findMany({
+        where: {
+          isPublished: true,
+          listingType: "SALE",
+          deletedAt: null,
+        },
+        include: { images: { where: { isPrimary: true }, take: 1 } },
+        orderBy: { listedAt: "desc" },
+        take: 12,
+      }),
+    [],
+  );
 
   return (
     <div>

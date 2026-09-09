@@ -15,6 +15,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { formatCurrency, formatDate, statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
 
@@ -23,11 +24,15 @@ export const metadata = { title: "Properties" };
 export default async function PropertiesPage() {
   await requirePagePermission("properties");
 
-  const properties = await db.property.findMany({
-    where: { deletedAt: null },
-    orderBy: { createdAt: "desc" },
-    take: 100,
-  });
+  const properties = await safeQuery(
+    () =>
+      db.property.findMany({
+        where: { deletedAt: null },
+        orderBy: { createdAt: "desc" },
+        take: 100,
+      }),
+    [],
+  );
 
   return (
     <div>

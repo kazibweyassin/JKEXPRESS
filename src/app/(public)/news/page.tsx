@@ -6,11 +6,14 @@ import { db } from "@/lib/db";
 import { safeQuery } from "@/lib/safe-query";
 import { formatDate } from "@/lib/utils";
 
-export const metadata = {
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({
   title: "News & Insights",
   description:
-    "Market updates, construction insights and property management guidance from JK Express.",
-};
+    "Market notes, construction standards and property management guidance from the JK Express team in Uganda.",
+  path: "/news",
+});
 
 const FALLBACK_COVER = "/site-photos/site-01.jpeg";
 

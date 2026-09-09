@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/table";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
+import { isDatabaseAvailable } from "@/lib/db-available";
+import { safeQuery } from "@/lib/safe-query";
 import { formatCurrency, formatDate, statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
 
@@ -19,7 +21,6 @@ export const metadata = { title: "Quotations" };
 
 export default async function QuotationsPage() {
   await requirePagePermission("projects");
-  let dbUnavailable = false;
   let quotations: {
     id: string;
     quotationNumber: string;
@@ -34,15 +35,16 @@ export default async function QuotationsPage() {
     project: { name: string } | null;
     items: { quantity: unknown; unitRate: unknown }[];
   }[] = [];
-  try {
-    quotations = await db.clientQuotation.findMany({
-      include: { items: true, project: true },
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    });
-  } catch {
-    dbUnavailable = true;
-  }
+  quotations = await safeQuery(
+    () =>
+      db.clientQuotation.findMany({
+        include: { items: true, project: true },
+        orderBy: { createdAt: "desc" },
+        take: 100,
+      }),
+    [],
+  );
+  const dbUnavailable = !(await isDatabaseAvailable());
 
   return (
     <div>

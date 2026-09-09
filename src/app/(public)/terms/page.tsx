@@ -1,4 +1,11 @@
-export const metadata = { title: "Terms and Conditions" };
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({
+  title: "Terms and Conditions",
+  description:
+    "Terms of use for the JK Express website, listings, quotations and client portals.",
+  path: "/terms",
+});
 
 export default function TermsPage() {
   return (

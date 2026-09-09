@@ -13,6 +13,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 import { formatDate, statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
 
@@ -21,17 +22,21 @@ export const metadata = { title: "Maintenance" };
 export default async function MaintenancePage() {
   await requirePagePermission("maintenance");
 
-  const tickets = await db.maintenanceTicket.findMany({
-    where: { deletedAt: null },
-    include: {
-      property: { select: { title: true } },
-      unit: { select: { unitNumber: true } },
-      tenant: { select: { firstName: true, lastName: true } },
-      assignee: { select: { name: true } },
-    },
-    orderBy: { reportedAt: "desc" },
-    take: 100,
-  });
+  const tickets = await safeQuery(
+    () =>
+      db.maintenanceTicket.findMany({
+        where: { deletedAt: null },
+        include: {
+          property: { select: { title: true } },
+          unit: { select: { unitNumber: true } },
+          tenant: { select: { firstName: true, lastName: true } },
+          assignee: { select: { name: true } },
+        },
+        orderBy: { reportedAt: "desc" },
+        take: 100,
+      }),
+    [],
+  );
 
   return (
     <div>

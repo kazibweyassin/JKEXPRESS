@@ -14,11 +14,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { getCompanySettings } from "@/lib/company";
 
-export const metadata = {
-  title: "Services | JK Express",
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({
+  title: "Construction, Real Estate & Property Management Services",
   description:
-    "Construction, real estate brokerage and property management services from JK Express.",
-};
+    "JK Express services: construction delivery, real estate brokerage and professional property management across Uganda.",
+  path: "/services",
+});
 
 const services = [
   {
@@ -28,10 +31,10 @@ const services = [
     badge: "Build",
     text: "Residential, commercial and institutional projects with structured planning, BOQs, site reporting and milestone control.",
     points: [
-      "Project planning & mobilisation",
-      "BOQ and cost control",
-      "Site supervision & reporting",
-      "Handover & snagging",
+      "Building and construction works",
+      "Retaining and specialist works",
+      "Materials, scaffolding and formwork",
+      "Waterproofing and damp control",
     ],
   },
   {

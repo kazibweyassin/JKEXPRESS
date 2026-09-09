@@ -6,7 +6,14 @@ import { db } from "@/lib/db";
 import { safeQuery } from "@/lib/safe-query";
 import { statusLabel } from "@/lib/utils";
 
-export const metadata = { title: "Careers" };
+import { pageMeta } from "@/lib/seo";
+
+export const metadata = pageMeta({
+  title: "Careers at JK Express",
+  description:
+    "Join JK Express in construction, real estate and property management roles across Uganda.",
+  path: "/careers",
+});
 
 export default async function CareersPage() {
   const company = await getCompanySettings();

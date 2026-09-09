@@ -9,15 +9,20 @@ import {
 } from "@/components/ui/table";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
+import { safeQuery } from "@/lib/safe-query";
 
 export const metadata = { title: "Contractors" };
 
 export default async function ContractorsPage() {
   await requirePagePermission("contractors");
-  const contractors = await db.contractor.findMany({
-    where: { deletedAt: null },
-    orderBy: { name: "asc" },
-  });
+  const contractors = await safeQuery(
+    () =>
+      db.contractor.findMany({
+        where: { deletedAt: null },
+        orderBy: { name: "asc" },
+      }),
+    [],
+  );
 
   return (
     <div>

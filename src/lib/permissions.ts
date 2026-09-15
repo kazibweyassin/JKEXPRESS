@@ -98,6 +98,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<
       "projects",
       "procurement",
       "inventory",
+      "contractors",
+      "suppliers",
+      "equipment",
       "employees",
       "documents",
       "reports",
@@ -106,7 +109,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<
     ["view", "create", "edit", "approve", "export", "assign"],
   ),
   [ROLE_SLUGS.PROJECT_MANAGER]: perms(
-    ["dashboard", "projects", "procurement", "inventory", "documents", "reports"],
+    ["dashboard", "projects", "procurement", "inventory", "contractors", "suppliers", "documents", "reports"],
     ["view", "create", "edit", "approve", "assign"],
   ),
   [ROLE_SLUGS.SITE_ENGINEER]: perms(
@@ -114,8 +117,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<
     ["view", "create", "edit"],
   ),
   [ROLE_SLUGS.QUANTITY_SURVEYOR]: perms(
-    ["dashboard", "projects", "procurement", "documents", "reports"],
-    ["view", "create", "edit", "export"],
+    ["dashboard", "projects", "procurement", "contractors", "documents", "reports"],
+    ["view", "create", "edit", "approve", "export"],
   ),
   [ROLE_SLUGS.PROPERTY_MANAGER]: perms(
     [
@@ -151,7 +154,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<
     ["view", "create", "edit"],
   ),
   [ROLE_SLUGS.ACCOUNTANT]: perms(
-    ["dashboard", "rent", "payments", "reports", "documents"],
+    ["dashboard", "rent", "payments", "projects", "procurement", "reports", "documents"],
     ["view", "create", "edit", "export", "approve"],
   ),
   [ROLE_SLUGS.HR_OFFICER]: perms(

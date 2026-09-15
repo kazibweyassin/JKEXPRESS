@@ -1,4 +1,8 @@
 import { PageHeader } from "@/components/ui/page-header";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SupplierForm } from "@/components/forms/construction-forms";
+import { RowAction } from "@/components/forms/form-frame";
+import { deleteSupplier } from "@/app/actions/construction";
 import {
   Table,
   TableBody,
@@ -26,7 +30,15 @@ export default async function SuppliersPage() {
 
   return (
     <div>
-      <PageHeader title="Suppliers" description="Supplier directory." />
+      <PageHeader title="Suppliers" description="Supplier directory for material purchase." />
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-base">Register supplier</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <SupplierForm />
+        </CardContent>
+      </Card>
       <div className="rounded-xl border border-slate-200 bg-white">
         <Table>
           <TableHeader>
@@ -35,6 +47,7 @@ export default async function SuppliersPage() {
               <TableHead>Email</TableHead>
               <TableHead>Phone</TableHead>
               <TableHead>Address</TableHead>
+              <TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -44,6 +57,15 @@ export default async function SuppliersPage() {
                 <TableCell>{s.email ?? "—"}</TableCell>
                 <TableCell>{s.phone ?? "—"}</TableCell>
                 <TableCell>{s.address ?? "—"}</TableCell>
+                <TableCell>
+                  <RowAction
+                    action={deleteSupplier}
+                    name="id"
+                    value={s.id}
+                    label="Remove"
+                    confirm="Remove this supplier?"
+                  />
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

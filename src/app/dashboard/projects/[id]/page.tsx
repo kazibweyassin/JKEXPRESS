@@ -23,6 +23,7 @@ import {
   BoqForm,
   SiteDiaryForm,
   VariationOrderForm,
+  ProjectExpenseForm,
 } from "@/components/forms/construction-forms";
 
 export default async function ProjectDetailDashboardPage({
@@ -391,7 +392,8 @@ export default async function ProjectDetailDashboardPage({
         <CardHeader>
           <CardTitle className="text-base">Project financials</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
+          <ProjectExpenseForm projectId={project.id} />
           <Table>
             <TableHeader>
               <TableRow>

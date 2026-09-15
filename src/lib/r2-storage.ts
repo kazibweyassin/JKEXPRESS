@@ -27,16 +27,32 @@ function client(config: ReturnType<typeof configuration>) {
   });
 }
 
-export async function uploadR2Image(key: string, body: Uint8Array, contentType: string) {
+export async function uploadR2File(
+  key: string,
+  body: Uint8Array,
+  contentType: string,
+  options?: { cacheControl?: string; contentDisposition?: string },
+) {
   const config = configuration();
   await client(config).send(new PutObjectCommand({
     Bucket: config.bucket,
     Key: key,
     Body: body,
     ContentType: contentType,
-    CacheControl: "public, max-age=31536000, immutable",
+    CacheControl: options?.cacheControl ?? "public, max-age=31536000, immutable",
+    ContentDisposition: options?.contentDisposition,
   }));
   return `${config.publicUrl}/${key}`;
+}
+
+export async function uploadR2Image(key: string, body: Uint8Array, contentType: string) {
+  return uploadR2File(key, body, contentType);
+}
+
+export function r2KeyFromPublicUrl(url: string) {
+  const publicUrl = process.env.R2_PUBLIC_URL?.trim().replace(/\/$/, "");
+  if (!publicUrl || !url.startsWith(`${publicUrl}/`)) return null;
+  return url.slice(publicUrl.length + 1);
 }
 
 export async function deleteR2Images(keys: string[]) {

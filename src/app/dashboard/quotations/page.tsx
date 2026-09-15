@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { AcceptQuotationForm } from "@/components/forms/construction-forms";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { isDatabaseAvailable } from "@/lib/db-available";
@@ -102,10 +103,13 @@ export default async function QuotationsPage() {
                     <Badge variant={statusVariant(q.status)}>{statusLabel(q.status)}</Badge>
                   </TableCell>
                   <TableCell className="text-xs">{formatDate(q.createdAt)}</TableCell>
-                  <TableCell>
+                  <TableCell className="space-y-2">
                     <Button variant="outline" size="sm" asChild>
                       <a href={`/dashboard/quotations/${q.id}/pdf`}>Download PDF</a>
                     </Button>
+                    {q.status !== "ACCEPTED" && q.status !== "DECLINED" ? (
+                      <AcceptQuotationForm quotationId={q.id} />
+                    ) : null}
                   </TableCell>
                 </TableRow>
               );

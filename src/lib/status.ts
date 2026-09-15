@@ -5,14 +5,14 @@ export function statusVariant(
 ): NonNullable<BadgeProps["variant"]> {
   const s = status.toUpperCase();
   if (
-    ["ACTIVE", "AVAILABLE", "PAID", "COMPLETED", "APPROVED", "WON", "OCCUPIED"].includes(
+    ["ACTIVE", "AVAILABLE", "PAID", "COMPLETED", "APPROVED", "WON", "OCCUPIED", "ACCEPTED", "RECEIVED"].includes(
       s,
     )
   ) {
     return "success";
   }
   if (
-    ["PENDING", "DRAFT", "NEW", "SCHEDULED", "PARTIAL", "EXPIRING", "IN_PROGRESS", "ASSIGNED"].includes(
+    ["PENDING", "DRAFT", "NEW", "SCHEDULED", "PARTIAL", "EXPIRING", "IN_PROGRESS", "ASSIGNED", "CERTIFIED", "SUBMITTED", "QUOTING", "ORDERED", "ISSUED"].includes(
       s,
     )
   ) {

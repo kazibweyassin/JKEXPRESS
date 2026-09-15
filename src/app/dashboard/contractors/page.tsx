@@ -1,4 +1,8 @@
 import { PageHeader } from "@/components/ui/page-header";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ContractorForm } from "@/components/forms/construction-forms";
+import { RowAction } from "@/components/forms/form-frame";
+import { deleteContractor } from "@/app/actions/construction";
 import {
   Table,
   TableBody,
@@ -30,6 +34,14 @@ export default async function ContractorsPage() {
         title="Subcontractors"
         description="External works packages. Assign them to a project; do not add their workers to Employees."
       />
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-base">Register subcontractor</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ContractorForm />
+        </CardContent>
+      </Card>
       <div className="rounded-xl border border-slate-200 bg-white">
         <Table>
           <TableHeader>
@@ -38,6 +50,7 @@ export default async function ContractorsPage() {
               <TableHead>Specialty</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Phone</TableHead>
+              <TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -47,6 +60,15 @@ export default async function ContractorsPage() {
                 <TableCell>{c.specialty ?? "—"}</TableCell>
                 <TableCell>{c.email ?? "—"}</TableCell>
                 <TableCell>{c.phone ?? "—"}</TableCell>
+                <TableCell>
+                  <RowAction
+                    action={deleteContractor}
+                    name="id"
+                    value={c.id}
+                    label="Remove"
+                    confirm="Remove this subcontractor?"
+                  />
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

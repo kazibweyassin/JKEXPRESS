@@ -51,7 +51,7 @@ describe("local listing catalog", () => {
     ).toBe(true);
   });
 
-  it("skips the database unless listings are explicitly forced", () => {
+  it("skips only known-offline Prisma hosts unless listings are forced", () => {
     expect(
       shouldSkipDatabase(
         "postgres://user:pass@db.prisma.io:5432/postgres?sslmode=require",
@@ -61,7 +61,7 @@ describe("local listing catalog", () => {
       shouldSkipDatabase(
         "postgresql://postgres:postgres@localhost:5432/jkexpress",
       ),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       shouldSkipDatabase(
         "postgres://user:pass@db.prisma.io:5432/postgres?sslmode=require",

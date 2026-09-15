@@ -10,7 +10,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ClientForm } from "@/components/forms/directory-forms";
+import { RowAction } from "@/components/forms/form-frame";
+import { deleteClient } from "@/app/actions/directory";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { safeQuery } from "@/lib/safe-query";
@@ -41,6 +44,14 @@ export default async function ClientsPage() {
         title="Clients"
         description="Client and buyer contacts from CRM."
       />
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-base">Add client</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ClientForm />
+        </CardContent>
+      </Card>
 
       {contacts.length === 0 ? (
         <EmptyState
@@ -61,6 +72,7 @@ export default async function ClientsPage() {
                   <TableHead>Company</TableHead>
                   <TableHead>City</TableHead>
                   <TableHead>Added</TableHead>
+                  <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -77,6 +89,15 @@ export default async function ClientsPage() {
                     <TableCell className="text-xs">{c.company ?? "—"}</TableCell>
                     <TableCell className="text-xs">{c.city ?? "—"}</TableCell>
                     <TableCell className="text-xs">{formatDate(c.createdAt)}</TableCell>
+                    <TableCell>
+                      <RowAction
+                        action={deleteClient}
+                        name="id"
+                        value={c.id}
+                        label="Remove"
+                        confirm="Remove this client?"
+                      />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

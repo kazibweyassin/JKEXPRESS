@@ -1,27 +1,43 @@
 /**
- * Public pages must keep working when Postgres is unreachable
- * (currently DATABASE_URL points at db.prisma.io). Probe at most once
- * per process; skip known-offline Prisma hosts unless USE_DB_LISTINGS=true.
+ * Public pages must keep working when the configured host is known-offline
+ * (Prisma Data Platform). Local Postgres is probed, and a failed probe is
+ * retried so the dashboard banner can clear once the database is back.
  */
 
 let available: boolean | null = null;
+let checkedAt = 0;
 let inflight: Promise<boolean> | null = null;
+const RETRY_AFTER_MS = 5_000;
+
+function hostnameOf(url?: string) {
+  if (!url) return "";
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return "";
+  }
+}
 
 export function shouldSkipDatabase(
-  _url = process.env.DATABASE_URL,
+  url = process.env.DATABASE_URL,
   forceListings = process.env.USE_DB_LISTINGS,
 ): boolean {
-  return forceListings !== "true";
+  if (forceListings === "true") return false;
+  return hostnameOf(url) === "db.prisma.io";
 }
 
 export function markDatabaseUnavailable() {
   available = false;
+  checkedAt = Date.now();
 }
 
 export async function isDatabaseAvailable(): Promise<boolean> {
-  if (available !== null) return available;
   if (shouldSkipDatabase()) {
     available = false;
+    return false;
+  }
+  if (available === true) return true;
+  if (available === false && Date.now() - checkedAt < RETRY_AFTER_MS) {
     return false;
   }
   if (inflight) return inflight;
@@ -37,7 +53,7 @@ export async function isDatabaseAvailable(): Promise<boolean> {
       ]);
       available = true;
     } catch {
-      available = false;
+      markDatabaseUnavailable();
     } finally {
       inflight = null;
     }

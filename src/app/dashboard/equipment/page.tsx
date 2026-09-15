@@ -1,5 +1,9 @@
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EquipmentForm } from "@/components/forms/construction-forms";
+import { RowAction } from "@/components/forms/form-frame";
+import { deleteEquipment } from "@/app/actions/construction";
 import {
   Table,
   TableBody,
@@ -29,7 +33,15 @@ export default async function EquipmentPage() {
 
   return (
     <div>
-      <PageHeader title="Equipment" description="Machinery and tools register." />
+      <PageHeader title="Equipment" description="Company plant and tools. Subcontractor plant stays off this register." />
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-base">Register equipment</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <EquipmentForm />
+        </CardContent>
+      </Card>
       <div className="rounded-xl border border-slate-200 bg-white">
         <Table>
           <TableHeader>
@@ -40,6 +52,7 @@ export default async function EquipmentPage() {
               <TableHead>Condition</TableHead>
               <TableHead>Location</TableHead>
               <TableHead>Next service</TableHead>
+              <TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -55,6 +68,15 @@ export default async function EquipmentPage() {
                 </TableCell>
                 <TableCell>{eq.currentLocation ?? "—"}</TableCell>
                 <TableCell>{formatDate(eq.nextServiceDate)}</TableCell>
+                <TableCell>
+                  <RowAction
+                    action={deleteEquipment}
+                    name="id"
+                    value={eq.id}
+                    label="Remove"
+                    confirm="Remove this equipment record?"
+                  />
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

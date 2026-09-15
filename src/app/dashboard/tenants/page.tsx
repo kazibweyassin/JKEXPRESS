@@ -9,7 +9,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { TenantForm } from "@/components/forms/directory-forms";
+import { RowAction } from "@/components/forms/form-frame";
+import { deleteTenant } from "@/app/actions/directory";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { safeQuery } from "@/lib/safe-query";
@@ -47,6 +50,14 @@ export default async function TenantsPage() {
         title="Tenants"
         description="Tenant directory and active leases."
       />
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-base">Add tenant</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TenantForm />
+        </CardContent>
+      </Card>
 
       {tenants.length === 0 ? (
         <EmptyState
@@ -65,6 +76,7 @@ export default async function TenantsPage() {
                   <TableHead>Phone</TableHead>
                   <TableHead>Active unit</TableHead>
                   <TableHead>Joined</TableHead>
+                  <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -83,6 +95,15 @@ export default async function TenantsPage() {
                           : "—"}
                       </TableCell>
                       <TableCell className="text-xs">{formatDate(t.createdAt)}</TableCell>
+                      <TableCell>
+                        <RowAction
+                          action={deleteTenant}
+                          name="id"
+                          value={t.id}
+                          label="Remove"
+                          confirm="Remove this tenant?"
+                        />
+                      </TableCell>
                     </TableRow>
                   );
                 })}

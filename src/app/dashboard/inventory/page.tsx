@@ -9,7 +9,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { IssueStockForm } from "@/components/forms/construction-forms";
+import {
+  IssueStockForm,
+  InventoryItemForm,
+  ReceiveStockForm,
+} from "@/components/forms/construction-forms";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { safeQuery } from "@/lib/safe-query";
@@ -46,6 +50,33 @@ export default async function InventoryPage() {
         title="Stores & materials"
         description="Company stores only. Issue stock to a construction project; subcontractor materials stay off this register."
       />
+      <div className="mb-6 grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Add store item</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <InventoryItemForm />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Receive into store</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ReceiveStockForm
+              items={items.map((item) => ({
+                id: item.id,
+                label: `${item.sku} — ${item.name} (${Number(item.quantityOnHand)} ${item.unit})`,
+              }))}
+              projects={projects.map((p) => ({
+                id: p.id,
+                label: `${p.code} — ${p.name}`,
+              }))}
+            />
+          </CardContent>
+        </Card>
+      </div>
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="text-base">Issue to site</CardTitle>

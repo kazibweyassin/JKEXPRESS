@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
+import { FormFrame } from "@/components/forms/form-frame";
 import {
   assignProjectEmployee,
   assignProjectSubcontractor,
@@ -17,6 +18,19 @@ import {
   createSiteReport,
   createVariationOrder,
   createPurchaseRequest,
+  acceptClientQuotation,
+  addContractSpecification,
+  addSupplierQuotation,
+  selectSupplierQuotation,
+  approvePurchaseRequest,
+  receivePurchaseOrder,
+  receiveStock,
+  createInventoryItem,
+  createProjectExpense,
+  createContractor,
+  createSupplier,
+  createEquipment,
+  markIpcPaid,
 } from "@/app/actions/construction";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,44 +38,9 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { TEAM_ROLES } from "@/lib/construction-standards";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 type Option = { id: string; label: string };
-
-function FormFrame({
-  children,
-  onSubmit,
-}: {
-  children: React.ReactNode;
-  onSubmit: (data: FormData) => Promise<{ success: boolean; error?: string }>;
-}) {
-  const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
-
-  async function handle(formData: FormData) {
-    setPending(true);
-    setError(null);
-    const result = await onSubmit(formData);
-    setPending(false);
-    if (!result.success) {
-      setError(result.error ?? "Failed");
-      return;
-    }
-    router.refresh();
-  }
-
-  return (
-    <form action={handle} className="space-y-4">
-      {error ? (
-        <p className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-800">{error}</p>
-      ) : null}
-      {children}
-      <Button type="submit" disabled={pending}>
-        {pending ? "Saving…" : "Save"}
-      </Button>
-    </form>
-  );
-}
 
 export function ClientQuotationForm({ projects }: { projects: Option[] }) {
   const [message, setMessage] = useState<string | null>(null);
@@ -333,9 +312,19 @@ export function WeeklyProgressForm({
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="progressPercent">Overall progress %</Label>
+          <Label htmlFor="progressPercent">Progress % this week</Label>
           <Input id="progressPercent" name="progressPercent" type="number" min={0} max={100} />
         </div>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="appliesToProject">Apply % to the whole project?</Label>
+        <Select id="appliesToProject" name="appliesToProject" defaultValue="false">
+          <option value="false">No — package / weekly record only</option>
+          <option value="true">Yes — official project completion %</option>
+        </Select>
+        <p className="text-xs text-slate-500">
+          Do not apply a single subcontractor package percentage to the whole job.
+        </p>
       </div>
       <div className="space-y-2">
         <Label htmlFor="workCompleted">Work completed this week</Label>
@@ -454,23 +443,34 @@ export function ConstructionContractForm({
       }}
     >
       <div className="space-y-2">
-        <Label htmlFor="title">Contract title</Label>
-        <Input id="title" name="title" required />
+        <Label htmlFor="contract-title">Contract title</Label>
+        <Input id="contract-title" name="title" required />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="projectId">Project</Label>
-          <Select id="projectId" name="projectId" required defaultValue={projects[0]?.id ?? ""}>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.label}
-              </option>
-            ))}
-          </Select>
+          <Label htmlFor="contract-project">Project</Label>
+          {projects.length ? (
+            <SearchableSelect
+              id="contract-project"
+              name="projectId"
+              options={projects}
+              required
+              placeholder="Type a project name or code"
+              emptyLabel="No matching project"
+            />
+          ) : (
+            <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+              No projects in the database yet.{" "}
+              <a href="/dashboard/projects/new" className="font-medium underline">
+                Create a project
+              </a>{" "}
+              first, then return here.
+            </p>
+          )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="contractorId">Subcontractor (subcontracts only)</Label>
-          <Select id="contractorId" name="contractorId" defaultValue="">
+          <Label htmlFor="contract-contractor">Subcontractor (subcontracts only)</Label>
+          <Select id="contract-contractor" name="contractorId" defaultValue="">
             <option value="">Main contract (client)</option>
             {contractors.map((c) => (
               <option key={c.id} value={c.id}>
@@ -515,31 +515,51 @@ export function ConstructionContractForm({
   );
 }
 
-export function IpcForm({ contracts }: { contracts: Option[] }) {
+export function IpcForm({
+  contracts,
+}: {
+  contracts: Array<Option & { previousCertified?: number }>;
+}) {
   return (
-    <FormFrame onSubmit={createIpc}>
+    <FormFrame onSubmit={createIpc} submitLabel="Certify IPC">
       <div className="space-y-2">
         <Label htmlFor="contractId">Contract</Label>
         <Select id="contractId" name="contractId" required defaultValue={contracts[0]?.id ?? ""}>
           {contracts.map((c) => (
             <option key={c.id} value={c.id}>
               {c.label}
+              {c.previousCertified
+                ? ` (certified ${new Intl.NumberFormat("en-UG").format(c.previousCertified)})`
+                : ""}
             </option>
           ))}
         </Select>
+        <p className="text-xs text-slate-500">
+          Previously certified is taken from earlier IPCs. Gross amount is cumulative to date.
+        </p>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="periodStart">Period start</Label>
+          <Input id="periodStart" name="periodStart" type="date" required />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="periodEnd">Period end</Label>
+          <Input id="periodEnd" name="periodEnd" type="date" required />
+        </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="space-y-2">
-          <Label htmlFor="grossAmount">Gross amount</Label>
+          <Label htmlFor="grossAmount">Gross to date</Label>
           <Input id="grossAmount" name="grossAmount" type="number" min={0} required />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="retention">Retention</Label>
-          <Input id="retention" name="retention" type="number" min={0} defaultValue={0} />
+          <Label htmlFor="retentionRate">Retention %</Label>
+          <Input id="retentionRate" name="retentionRate" type="number" min={0} max={100} step="0.01" defaultValue={10} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="previousPaid">Previously certified</Label>
-          <Input id="previousPaid" name="previousPaid" type="number" min={0} defaultValue={0} />
+          <Label htmlFor="retentionAmount">Retention amount override</Label>
+          <Input id="retentionAmount" name="retentionAmount" type="number" min={0} placeholder="Leave blank to use %" />
         </div>
       </div>
       <div className="space-y-2">
@@ -667,4 +687,258 @@ export function PurchaseRequestForm({ projects }: { projects: Option[] }) {
     <div className="space-y-2"><Label htmlFor="justification">Justification</Label><Textarea id="justification" name="justification" rows={2} /></div>
     <div className="space-y-2"><Label htmlFor="items">Items</Label><Textarea id="items" name="items" rows={5} required placeholder={"Cement 42.5N | 200 | bags | 38000\nY12 reinforcement | 150 | lengths | 52000"} /><p className="text-xs text-slate-500">One line: description | quantity | unit | estimated rate</p></div>
   </FormFrame>;
+}
+
+export function ContractorForm() {
+  return (
+    <FormFrame onSubmit={createContractor} submitLabel="Register subcontractor">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2"><Label htmlFor="name">Company name</Label><Input id="name" name="name" required /></div>
+        <div className="space-y-2"><Label htmlFor="specialty">Specialty</Label><Input id="specialty" name="specialty" placeholder="Electrical, finishes…" /></div>
+        <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" name="email" type="email" /></div>
+        <div className="space-y-2"><Label htmlFor="phone">Phone</Label><Input id="phone" name="phone" /></div>
+      </div>
+      <div className="space-y-2"><Label htmlFor="address">Address</Label><Input id="address" name="address" /></div>
+    </FormFrame>
+  );
+}
+
+export function SupplierForm() {
+  return (
+    <FormFrame onSubmit={createSupplier} submitLabel="Register supplier">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2"><Label htmlFor="name">Name</Label><Input id="name" name="name" required /></div>
+        <div className="space-y-2"><Label htmlFor="taxNumber">Tax number</Label><Input id="taxNumber" name="taxNumber" /></div>
+        <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" name="email" type="email" /></div>
+        <div className="space-y-2"><Label htmlFor="phone">Phone</Label><Input id="phone" name="phone" /></div>
+      </div>
+      <div className="space-y-2"><Label htmlFor="address">Address</Label><Input id="address" name="address" /></div>
+    </FormFrame>
+  );
+}
+
+export function EquipmentForm() {
+  return (
+    <FormFrame onSubmit={createEquipment} submitLabel="Register equipment">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2"><Label htmlFor="name">Name</Label><Input id="name" name="name" required /></div>
+        <div className="space-y-2"><Label htmlFor="category">Category</Label><Input id="category" name="category" placeholder="Plant, tools…" /></div>
+        <div className="space-y-2"><Label htmlFor="currentLocation">Location</Label><Input id="currentLocation" name="currentLocation" /></div>
+        <div className="space-y-2">
+          <Label htmlFor="condition">Condition</Label>
+          <Select id="condition" name="condition" defaultValue="GOOD">
+            <option value="GOOD">Good</option>
+            <option value="FAIR">Fair</option>
+            <option value="POOR">Poor</option>
+            <option value="OUT_OF_SERVICE">Out of service</option>
+          </Select>
+        </div>
+        <div className="space-y-2"><Label htmlFor="nextServiceDate">Next service</Label><Input id="nextServiceDate" name="nextServiceDate" type="date" /></div>
+      </div>
+    </FormFrame>
+  );
+}
+
+export function InventoryItemForm() {
+  return (
+    <FormFrame onSubmit={createInventoryItem} submitLabel="Add store item">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2"><Label htmlFor="sku">SKU</Label><Input id="sku" name="sku" required placeholder="CEM-42.5-50" /></div>
+        <div className="space-y-2"><Label htmlFor="name">Name</Label><Input id="name" name="name" required /></div>
+        <div className="space-y-2">
+          <Label htmlFor="category">Category</Label>
+          <Select id="category" name="category" defaultValue="MATERIALS">
+            <option value="MATERIALS">Materials</option>
+            <option value="TOOLS">Tools</option>
+            <option value="MACHINERY">Machinery</option>
+            <option value="SAFETY">Safety</option>
+            <option value="SPARE_PARTS">Spare parts</option>
+            <option value="OFFICE">Office</option>
+          </Select>
+        </div>
+        <div className="space-y-2"><Label htmlFor="unit">Unit</Label><Input id="unit" name="unit" required defaultValue="item" /></div>
+        <div className="space-y-2"><Label htmlFor="quantityOnHand">Opening qty</Label><Input id="quantityOnHand" name="quantityOnHand" type="number" min={0} step="0.01" defaultValue={0} /></div>
+        <div className="space-y-2"><Label htmlFor="reorderLevel">Reorder level</Label><Input id="reorderLevel" name="reorderLevel" type="number" min={0} step="0.01" defaultValue={0} /></div>
+        <div className="space-y-2"><Label htmlFor="unitCost">Unit cost (UGX)</Label><Input id="unitCost" name="unitCost" type="number" min={0} /></div>
+      </div>
+    </FormFrame>
+  );
+}
+
+export function ReceiveStockForm({
+  items,
+  projects,
+}: {
+  items: Option[];
+  projects: Option[];
+}) {
+  return (
+    <FormFrame onSubmit={receiveStock} submitLabel="Receive into store">
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="space-y-2">
+          <Label htmlFor="receive-itemId">Store item</Label>
+          <Select id="receive-itemId" name="itemId" required defaultValue={items[0]?.id ?? ""}>
+            {items.map((i) => (
+              <option key={i.id} value={i.id}>{i.label}</option>
+            ))}
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="receive-projectId">Direct to site (optional)</Label>
+          <Select id="receive-projectId" name="projectId" defaultValue="">
+            <option value="">Warehouse receipt</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>{p.label}</option>
+            ))}
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="receive-quantity">Quantity</Label>
+          <Input id="receive-quantity" name="quantity" type="number" min={0.01} step="0.01" required />
+        </div>
+      </div>
+      <div className="space-y-2"><Label htmlFor="receive-notes">Notes</Label><Input id="receive-notes" name="notes" /></div>
+    </FormFrame>
+  );
+}
+
+export function ProjectExpenseForm({ projectId }: { projectId: string }) {
+  return (
+    <FormFrame onSubmit={createProjectExpense} submitLabel="Record expense">
+      <input type="hidden" name="projectId" value={projectId} />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="category">Category</Label>
+          <Select id="category" name="category" defaultValue="MATERIALS">
+            <option value="MATERIALS">Materials</option>
+            <option value="LABOUR">Labour</option>
+            <option value="SUBCONTRACT">Subcontract</option>
+            <option value="EQUIPMENT">Equipment</option>
+            <option value="TRANSPORT">Transport</option>
+            <option value="OTHER">Other</option>
+          </Select>
+        </div>
+        <div className="space-y-2"><Label htmlFor="amount">Amount (UGX)</Label><Input id="amount" name="amount" type="number" min={0.01} step="0.01" required /></div>
+        <div className="space-y-2"><Label htmlFor="expenseDate">Date</Label><Input id="expenseDate" name="expenseDate" type="date" /></div>
+        <div className="space-y-2"><Label htmlFor="description">Description</Label><Input id="description" name="description" required /></div>
+      </div>
+    </FormFrame>
+  );
+}
+
+export function AcceptQuotationForm({ quotationId }: { quotationId: string }) {
+  return (
+    <FormFrame onSubmit={acceptClientQuotation} submitLabel="Accept & create contract">
+      <input type="hidden" name="quotationId" value={quotationId} />
+    </FormFrame>
+  );
+}
+
+export function AddSpecificationForm({ contractId }: { contractId: string }) {
+  return (
+    <FormFrame onSubmit={addContractSpecification} submitLabel="Add specification">
+      <input type="hidden" name="contractId" value={contractId} />
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="space-y-2"><Label htmlFor={`clause-${contractId}`}>Clause</Label><Input id={`clause-${contractId}`} name="clause" placeholder="1.1" /></div>
+        <div className="space-y-2 sm:col-span-2"><Label htmlFor={`spec-title-${contractId}`}>Title</Label><Input id={`spec-title-${contractId}`} name="title" required /></div>
+      </div>
+      <div className="space-y-2"><Label htmlFor={`spec-desc-${contractId}`}>Description</Label><Input id={`spec-desc-${contractId}`} name="description" /></div>
+    </FormFrame>
+  );
+}
+
+export function MarkIpcPaidForm({ ipcId }: { ipcId: string }) {
+  return (
+    <FormFrame onSubmit={markIpcPaid} submitLabel="Mark paid">
+      <input type="hidden" name="ipcId" value={ipcId} />
+    </FormFrame>
+  );
+}
+
+export function SupplierQuoteForm({
+  requestId,
+  suppliers,
+}: {
+  requestId: string;
+  suppliers: Option[];
+}) {
+  return (
+    <FormFrame onSubmit={addSupplierQuotation} submitLabel="Add quote">
+      <input type="hidden" name="requestId" value={requestId} />
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="space-y-2">
+          <Label htmlFor={`supplier-${requestId}`}>Supplier</Label>
+          <Select id={`supplier-${requestId}`} name="supplierId" required defaultValue={suppliers[0]?.id ?? ""}>
+            {suppliers.map((s) => (
+              <option key={s.id} value={s.id}>{s.label}</option>
+            ))}
+          </Select>
+        </div>
+        <div className="space-y-2"><Label htmlFor={`amount-${requestId}`}>Amount (UGX)</Label><Input id={`amount-${requestId}`} name="amount" type="number" min={0.01} required /></div>
+        <div className="space-y-2"><Label htmlFor={`notes-${requestId}`}>Notes</Label><Input id={`notes-${requestId}`} name="notes" /></div>
+      </div>
+    </FormFrame>
+  );
+}
+
+export function SelectQuoteForm({ quotationId }: { quotationId: string }) {
+  return (
+    <FormFrame onSubmit={selectSupplierQuotation} submitLabel="Select">
+      <input type="hidden" name="quotationId" value={quotationId} />
+    </FormFrame>
+  );
+}
+
+export function ApprovePurchaseForm({ requestId }: { requestId: string }) {
+  return (
+    <FormFrame onSubmit={approvePurchaseRequest} submitLabel="Approve & raise PO">
+      <input type="hidden" name="requestId" value={requestId} />
+    </FormFrame>
+  );
+}
+
+export function ReceivePurchaseOrderForm({
+  orderId,
+  items,
+  hasProject,
+}: {
+  orderId: string;
+  items: Option[];
+  hasProject: boolean;
+}) {
+  return (
+    <FormFrame onSubmit={receivePurchaseOrder} submitLabel="Receive to store">
+      <input type="hidden" name="orderId" value={orderId} />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor={`po-item-${orderId}`}>Store item</Label>
+          <Select id={`po-item-${orderId}`} name="itemId" required defaultValue={items[0]?.id ?? ""}>
+            {items.map((i) => (
+              <option key={i.id} value={i.id}>{i.label}</option>
+            ))}
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor={`po-qty-${orderId}`}>Quantity</Label>
+          <Input id={`po-qty-${orderId}`} name="quantity" type="number" min={0.01} step="0.01" required />
+        </div>
+        {hasProject ? (
+          <div className="space-y-2">
+            <Label htmlFor={`po-site-${orderId}`}>Deliver to site?</Label>
+            <Select id={`po-site-${orderId}`} name="deliverToSite" defaultValue="false">
+              <option value="false">No — warehouse</option>
+              <option value="true">Yes — charge the project</option>
+            </Select>
+          </div>
+        ) : null}
+        <div className="space-y-2">
+          <Label htmlFor={`po-complete-${orderId}`}>Order complete?</Label>
+          <Select id={`po-complete-${orderId}`} name="complete" defaultValue="true">
+            <option value="true">Yes — mark received</option>
+            <option value="false">Partial receipt</option>
+          </Select>
+        </div>
+      </div>
+    </FormFrame>
+  );
 }

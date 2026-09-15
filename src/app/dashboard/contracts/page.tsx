@@ -12,6 +12,8 @@ import {
 import {
   ConstructionContractForm,
   IpcForm,
+  AddSpecificationForm,
+  MarkIpcPaidForm,
 } from "@/components/forms/construction-forms";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
@@ -66,6 +68,7 @@ export default async function ContractsPage() {
   const contractOptions = contracts.map((c) => ({
     id: c.id,
     label: `${c.contractNumber} — ${c.title}`,
+    previousCertified: c.ipcs.reduce((sum, ipc) => sum + Number(ipc.amountDue), 0),
   }));
 
   return (
@@ -80,7 +83,7 @@ export default async function ContractsPage() {
           <CardHeader>
             <CardTitle className="text-base">New contract</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="overflow-visible">
             <ConstructionContractForm
               projects={projectOptions}
               contractors={contractorOptions}
@@ -146,6 +149,7 @@ export default async function ContractsPage() {
                       <TableHead>Due</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Date</TableHead>
+                      <TableHead></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -161,6 +165,9 @@ export default async function ContractsPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-xs">{formatDate(ipc.createdAt)}</TableCell>
+                        <TableCell>
+                          {ipc.status === "CERTIFIED" ? <MarkIpcPaidForm ipcId={ipc.id} /> : null}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -168,6 +175,7 @@ export default async function ContractsPage() {
               ) : (
                 <p className="text-slate-500">No IPCs certified yet.</p>
               )}
+              <AddSpecificationForm contractId={contract.id} />
             </CardContent>
           </Card>
         ))}

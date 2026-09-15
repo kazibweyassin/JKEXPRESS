@@ -42,15 +42,72 @@ export const SUBCONTRACT_STATUSES = [
   "TERMINATED",
 ] as const;
 
+export const DEFAULT_RETENTION_RATE = 10;
+
 export function mondayOf(date: Date): Date {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + diff);
-  return d;
+  const utc = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const weekday = utc.getUTCDay();
+  const diff = weekday === 0 ? -6 : 1 - weekday;
+  utc.setUTCDate(utc.getUTCDate() + diff);
+  return utc;
 }
 
 export function padRef(prefix: string, year: number, seq: number) {
   return `${prefix}-${year}-${String(seq).padStart(4, "0")}`;
+}
+
+export function ipcCertificate(input: {
+  grossAmount: number;
+  previousCertified: number;
+  retentionRate?: number;
+  retentionAmount?: number;
+}) {
+  const grossAmount = Number(input.grossAmount) || 0;
+  const previousCertified = Number(input.previousCertified) || 0;
+  const rate =
+    input.retentionRate == null || Number.isNaN(Number(input.retentionRate))
+      ? DEFAULT_RETENTION_RATE
+      : Number(input.retentionRate);
+  const retention =
+    input.retentionAmount != null && !Number.isNaN(Number(input.retentionAmount))
+      ? Number(input.retentionAmount)
+      : (grossAmount * rate) / 100;
+  const amountDue = Math.round((grossAmount - retention - previousCertified) * 100) / 100;
+  return {
+    grossAmount,
+    retention,
+    previousPaid: previousCertified,
+    amountDue,
+  };
+}
+
+export function shouldUpdateProjectProgress(appliesToProject: boolean) {
+  return appliesToProject === true;
+}
+
+export function projectExpenditureTotal(parts: {
+  expenses: number;
+  materials: number;
+  certifiedWork: number;
+}) {
+  return (
+    (Number(parts.expenses) || 0) +
+    (Number(parts.materials) || 0) +
+    (Number(parts.certifiedWork) || 0)
+  );
+}
+
+export function quotationGrandTotal(input: {
+  items: Array<{ quantity: number; unitRate: number }>;
+  discount?: number;
+  taxRate?: number;
+  contingencyRate?: number;
+}) {
+  const subtotal = input.items.reduce(
+    (sum, item) => sum + Number(item.quantity) * Number(item.unitRate),
+    0,
+  );
+  const contingency = subtotal * (Number(input.contingencyRate || 0) / 100);
+  const taxable = Math.max(0, subtotal + contingency - Number(input.discount || 0));
+  return taxable + taxable * (Number(input.taxRate || 0) / 100);
 }

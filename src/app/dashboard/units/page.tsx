@@ -10,7 +10,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { UnitForm, UnitStatusForm } from "@/components/forms/directory-forms";
+import { RowAction } from "@/components/forms/form-frame";
+import { deleteUnit } from "@/app/actions/directory";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { safeQuery } from "@/lib/safe-query";
@@ -22,18 +25,29 @@ export const metadata = { title: "Units" };
 export default async function UnitsPage() {
   await requirePagePermission("units");
 
-  const units = await safeQuery(
-    () =>
-      db.unit.findMany({
-        where: { deletedAt: null },
-        include: {
-          property: { select: { title: true, reference: true, city: true } },
-        },
-        orderBy: [{ propertyId: "asc" }, { unitNumber: "asc" }],
-        take: 200,
-      }),
-    [],
-  );
+  const [units, properties] = await Promise.all([
+    safeQuery(
+      () =>
+        db.unit.findMany({
+          where: { deletedAt: null },
+          include: {
+            property: { select: { title: true, reference: true, city: true } },
+          },
+          orderBy: [{ propertyId: "asc" }, { unitNumber: "asc" }],
+          take: 200,
+        }),
+      [],
+    ),
+    safeQuery(
+      () =>
+        db.property.findMany({
+          where: { deletedAt: null },
+          select: { id: true, title: true, reference: true },
+          orderBy: { title: "asc" },
+        }),
+      [],
+    ),
+  ]);
 
   return (
     <div>
@@ -41,6 +55,23 @@ export default async function UnitsPage() {
         title="Units"
         description="Rental units across managed properties."
       />
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-base">Add unit</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {properties.length ? (
+            <UnitForm
+              properties={properties.map((item) => ({
+                id: item.id,
+                label: `${item.reference} — ${item.title}`,
+              }))}
+            />
+          ) : (
+            <p className="text-sm text-slate-500">Create a property first.</p>
+          )}
+        </CardContent>
+      </Card>
 
       {units.length === 0 ? (
         <EmptyState
@@ -60,6 +91,7 @@ export default async function UnitsPage() {
                   <TableHead>Status</TableHead>
                   <TableHead>Monthly rent</TableHead>
                   <TableHead>City</TableHead>
+                  <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -84,6 +116,16 @@ export default async function UnitsPage() {
                         : "—"}
                     </TableCell>
                     <TableCell className="text-xs">{u.property.city ?? "—"}</TableCell>
+                    <TableCell className="space-y-2">
+                      <UnitStatusForm id={u.id} status={u.status} />
+                      <RowAction
+                        action={deleteUnit}
+                        name="id"
+                        value={u.id}
+                        label="Remove"
+                        confirm="Remove this unit?"
+                      />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

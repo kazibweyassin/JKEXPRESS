@@ -98,6 +98,7 @@ export default async function WeeklyProgressPage() {
                 <TableRow>
                   <TableHead>Week</TableHead>
                   <TableHead>Project</TableHead>
+                  <TableHead>Package</TableHead>
                   <TableHead>%</TableHead>
                   <TableHead>Entered by</TableHead>
                   <TableHead>Status</TableHead>
@@ -108,6 +109,10 @@ export default async function WeeklyProgressPage() {
                   <TableRow key={r.id}>
                     <TableCell className="text-xs">{formatDate(r.weekStarting)}</TableCell>
                     <TableCell className="font-medium">{r.project.name}</TableCell>
+                    <TableCell className="text-xs">
+                      {r.contractor?.name ?? "Company works"}
+                      {r.appliesToProject ? " · official" : ""}
+                    </TableCell>
                     <TableCell>{r.progressPercent ?? "—"}</TableCell>
                     <TableCell className="text-xs">{r.enteredBy.name}</TableCell>
                     <TableCell>

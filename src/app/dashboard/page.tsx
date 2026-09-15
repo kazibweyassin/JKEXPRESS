@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { requirePagePermission } from "@/lib/auth-guard";
+import { mondayOf } from "@/lib/construction-standards";
 import { db } from "@/lib/db";
 import { isDatabaseAvailable } from "@/lib/db-available";
 import { safeQuery } from "@/lib/safe-query";
@@ -55,6 +56,44 @@ function fetchDashboardData(now: Date, in90: Date) {
     safeQuery(() => db.purchaseRequest.count({ where: { status: { in: ["SUBMITTED", "PENDING_APPROVAL", "PM_REVIEW"] } } }), 0),
     safeQuery(() => db.lead.findMany({ where: { deletedAt: null }, orderBy: { createdAt: "desc" }, take: 5 }), []),
     safeQuery(() => db.auditLog.findMany({ orderBy: { createdAt: "desc" }, take: 8, include: { user: true } }), []),
+    safeQuery(
+      () =>
+        db.constructionProject.aggregate({
+          _sum: { approvedBudget: true, currentExpenditure: true },
+          where: { deletedAt: null, status: { in: ["ACTIVE", "ON_HOLD", "DELAYED"] } },
+        }),
+      { _sum: { approvedBudget: null, currentExpenditure: null } },
+    ),
+    safeQuery(() => db.interimPaymentCertificate.count({ where: { status: "CERTIFIED" } }), 0),
+    safeQuery(
+      () =>
+        db.constructionProject.count({
+          where: {
+            status: "ACTIVE",
+            deletedAt: null,
+            weeklyReports: { none: { weekStarting: mondayOf(now) } },
+          },
+        }),
+      0,
+    ),
+    safeQuery(
+      () =>
+        db.constructionProject.findMany({
+          where: { deletedAt: null, status: { in: ["ACTIVE", "ON_HOLD", "DELAYED"] } },
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            approvedBudget: true,
+            currentExpenditure: true,
+            completionPercentage: true,
+            status: true,
+          },
+          orderBy: { updatedAt: "desc" },
+          take: 6,
+        }),
+      [],
+    ),
   ]);
 }
 
@@ -66,6 +105,8 @@ const EMPTY_DASHBOARD_DATA = [
   { _sum: { amount: null } },
   { _sum: { balance: null } },
   0, [], 0, [], [],
+  { _sum: { approvedBudget: null, currentExpenditure: null } },
+  0, 0, [],
 ] as unknown as DashboardData;
 
 export default async function DashboardPage() {
@@ -99,7 +140,16 @@ export default async function DashboardPage() {
     pendingApprovals,
     recentLeads,
     recentActivities,
+    constructionSpend,
+    unpaidIpcs,
+    missingWeeklyReports,
+    liveProjects,
   ] = dashboardData;
+
+  const constructionBudget = Number(constructionSpend._sum.approvedBudget ?? 0);
+  const constructionActual = Number(constructionSpend._sum.currentExpenditure ?? 0);
+  const spendRatio =
+    constructionBudget > 0 ? Math.min(100, Math.round((constructionActual / constructionBudget) * 100)) : 0;
 
   const totalUnits = occupiedUnits + vacantUnits;
   const occupancyRate =
@@ -151,10 +201,82 @@ export default async function DashboardPage() {
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard title="Active projects" value={activeProjects} icon={HardHat} subtitle={`${completedProjects} completed`} />
+        <StatCard
+          title="Construction spend"
+          value={formatCurrency(constructionActual)}
+          icon={HardHat}
+          subtitle={constructionBudget ? `of ${formatCurrency(constructionBudget)} budget` : "No live budget"}
+          tone={spendRatio > 90 ? "danger" : spendRatio > 70 ? "warning" : "default"}
+          progress={spendRatio}
+        />
+        <StatCard
+          title="IPCs awaiting payment"
+          value={unpaidIpcs}
+          icon={Wallet}
+          tone={unpaidIpcs > 0 ? "warning" : "success"}
+        />
+        <StatCard
+          title="Weeks without a report"
+          value={missingWeeklyReports}
+          icon={FileWarning}
+          subtitle="Active projects missing this week"
+          tone={missingWeeklyReports > 0 ? "warning" : "success"}
+        />
+      </div>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard title="Properties" value={totalProperties} icon={Building2} subtitle={`${availableProperties} available`} />
         <StatCard title="Rent invoiced" value={formatCurrency(Number(rentInvoiced._sum.totalAmount ?? 0))} icon={Wallet} />
         <StatCard title="Pending approvals" value={pendingApprovals} icon={Users} />
       </div>
+
+      <Card className="mt-6">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-base">Live construction</CardTitle>
+          <Link href="/dashboard/projects" className="text-sm text-navy-700 hover:underline">
+            View projects
+          </Link>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Project</TableHead>
+                <TableHead>Progress</TableHead>
+                <TableHead>Budget</TableHead>
+                <TableHead>Spent</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {liveProjects.map((project) => (
+                <TableRow key={project.id}>
+                  <TableCell>
+                    <Link href={`/dashboard/projects/${project.id}`} className="font-medium text-navy-900 hover:underline">
+                      {project.name}
+                    </Link>
+                    <div className="text-xs text-slate-500">{project.code}</div>
+                  </TableCell>
+                  <TableCell>{Math.round(project.completionPercentage)}%</TableCell>
+                  <TableCell className="text-xs">
+                    {project.approvedBudget != null ? formatCurrency(Number(project.approvedBudget)) : "—"}
+                  </TableCell>
+                  <TableCell className="text-xs">{formatCurrency(Number(project.currentExpenditure))}</TableCell>
+                  <TableCell>
+                    <Badge variant={statusVariant(project.status)}>{statusLabel(project.status)}</Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {liveProjects.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-slate-500">
+                    No live construction projects
+                  </TableCell>
+                </TableRow>
+              ) : null}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <Card>

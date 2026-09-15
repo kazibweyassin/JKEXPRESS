@@ -109,7 +109,7 @@ async function main() {
   }
 
   const admin = await ensureUser(
-    "admin@jkexpress.ug",
+    "email@jkexpress.ug",
     "System Admin",
     ROLE_SLUGS.SUPER_ADMIN,
     "+256700000001",

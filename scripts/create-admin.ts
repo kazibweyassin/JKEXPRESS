@@ -1,7 +1,8 @@
-import { PrismaClient } from "@prisma/client";
+import { randomUUID } from "node:crypto";
 import bcrypt from "bcryptjs";
+import pg from "pg";
 
-const prisma = new PrismaClient();
+const { Pool } = pg;
 
 const resources = [
   "dashboard",
@@ -40,9 +41,12 @@ const actions = [
 async function main() {
   const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
   const password = process.env.ADMIN_PASSWORD;
+  const databaseUrl = process.env.DATABASE_URL?.trim();
 
-  if (!email || !password) {
-    throw new Error("ADMIN_EMAIL and ADMIN_PASSWORD are required.");
+  if (!email || !password || !databaseUrl) {
+    throw new Error(
+      "ADMIN_EMAIL, ADMIN_PASSWORD, and DATABASE_URL are required.",
+    );
   }
 
   if (password.length < 8) {
@@ -51,86 +55,70 @@ async function main() {
     );
   }
 
-  // Create or update the administrator role.
-  const adminRole = await prisma.role.upsert({
-    where: {
-      slug: "admin",
-    },
-    update: {
-      name: "Administrator",
-      description: "Full system administrator",
-      isSystem: true,
-    },
-    create: {
-      name: "Administrator",
-      slug: "admin",
-      description: "Full system administrator",
-      isSystem: true,
-    },
-  });
+  const pool = new Pool({ connectionString: databaseUrl });
+  const client = await pool.connect();
 
-  // Create every administrator permission and attach it to the role.
-  for (const resource of resources) {
-    for (const action of actions) {
-      const permission = await prisma.permission.upsert({
-        where: {
-          resource_action: {
-            resource,
-            action,
-          },
-        },
-        update: {
-          description: `${action} ${resource}`,
-        },
-        create: {
-          resource,
-          action,
-          description: `${action} ${resource}`,
-        },
-      });
+  try {
+    await client.query("BEGIN");
 
-      await prisma.rolePermission.upsert({
-        where: {
-          roleId_permissionId: {
-            roleId: adminRole.id,
-            permissionId: permission.id,
-          },
-        },
-        update: {},
-        create: {
-          roleId: adminRole.id,
-          permissionId: permission.id,
-        },
-      });
+    const roleResult = await client.query<{ id: string }>(
+      `INSERT INTO "Role" (id, name, slug, description, "isSystem", "createdAt", "updatedAt")
+       VALUES ($1, 'Administrator', 'admin', 'Full system administrator', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+       ON CONFLICT (slug) DO UPDATE SET
+         name = EXCLUDED.name,
+         description = EXCLUDED.description,
+         "isSystem" = true,
+         "updatedAt" = CURRENT_TIMESTAMP
+       RETURNING id`,
+      [randomUUID()],
+    );
+    const roleId = roleResult.rows[0].id;
+
+    for (const resource of resources) {
+      for (const action of actions) {
+        const permissionResult = await client.query<{ id: string }>(
+          `INSERT INTO "Permission" (id, resource, action, description)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT (resource, action) DO UPDATE SET description = EXCLUDED.description
+           RETURNING id`,
+          [randomUUID(), resource, action, `${action} ${resource}`],
+        );
+
+        await client.query(
+          `INSERT INTO "RolePermission" (id, "roleId", "permissionId")
+           VALUES ($1, $2, $3)
+           ON CONFLICT ("roleId", "permissionId") DO NOTHING`,
+          [randomUUID(), roleId, permissionResult.rows[0].id],
+        );
+      }
     }
-  }
 
-  // Securely hash the administrator password.
   const passwordHash = await bcrypt.hash(password, 12);
 
-  // Create the administrator or update the existing account.
-  const admin = await prisma.user.upsert({
-    where: {
-      email,
-    },
-    update: {
-      name: "JK Express Admin",
-      passwordHash,
-      roleId: adminRole.id,
-      isActive: true,
-      deletedAt: null,
-    },
-    create: {
-      name: "JK Express Admin",
-      email,
-      passwordHash,
-      roleId: adminRole.id,
-      isActive: true,
-    },
-  });
+    await client.query(
+      `INSERT INTO "User" (id, name, email, "passwordHash", "roleId", "isActive", "createdAt", "updatedAt")
+       VALUES ($1, 'JK Express Admin', $2, $3, $4, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+       ON CONFLICT (email) DO UPDATE SET
+         name = EXCLUDED.name,
+         "passwordHash" = EXCLUDED."passwordHash",
+         "roleId" = EXCLUDED."roleId",
+         "isActive" = true,
+         "updatedAt" = CURRENT_TIMESTAMP,
+         "deletedAt" = NULL`,
+      [randomUUID(), email, passwordHash, roleId],
+    );
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+    await pool.end();
+  }
 
   console.log("Administrator setup completed successfully.");
-  console.log(`Email: ${admin.email}`);
+  console.log(`Email: ${email}`);
   console.log(`Resources configured: ${resources.length}`);
   console.log(`Permissions configured: ${resources.length * actions.length}`);
 }
@@ -140,7 +128,4 @@ main()
     console.error("Unable to create administrator:");
     console.error(error);
     process.exitCode = 1;
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
   });

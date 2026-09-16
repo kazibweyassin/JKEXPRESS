@@ -47,3 +47,5 @@ prisma/dev.db-journal
 
 # uploads
 /public/uploads
+node_modules/
+dist/

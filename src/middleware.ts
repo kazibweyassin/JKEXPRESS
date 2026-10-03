@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { usesSecureAuthCookie } from "@/lib/auth-cookie";
 
 const protectedPrefixes = ["/dashboard", "/portal"];
 
@@ -19,9 +20,16 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // Production sets __Secure-authjs.session-token. getToken() otherwise
+  // looks for authjs.session-token and treats a valid login as signed out.
   const token = await getToken({
     req,
     secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
+    secureCookie: usesSecureAuthCookie({
+      authUrl: process.env.AUTH_URL ?? process.env.NEXTAUTH_URL,
+      forwardedProto: req.headers.get("x-forwarded-proto"),
+      protocol: req.nextUrl.protocol,
+    }),
   });
 
   if (!token) {

@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { shouldSkipDatabase } from "@/lib/db-available";
 
 export const metadata = { title: "Sign in" };
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function LoginPage({
   searchParams,

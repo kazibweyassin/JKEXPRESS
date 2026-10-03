@@ -1,14 +1,12 @@
 "use client";
 
 import { useActionState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { loginAction, type LoginResult } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export function LoginForm({ callbackUrl }: { callbackUrl?: string }) {
-  const router = useRouter();
   const [state, formAction, pending] = useActionState<LoginResult | null, FormData>(
     loginAction,
     null,
@@ -16,10 +14,9 @@ export function LoginForm({ callbackUrl }: { callbackUrl?: string }) {
 
   useEffect(() => {
     if (state?.success) {
-      router.push(state.redirectTo);
-      router.refresh();
+      window.location.assign(state.redirectTo);
     }
-  }, [state, router]);
+  }, [state]);
 
   return (
     <form action={formAction} className="space-y-4">

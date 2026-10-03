@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
 import { FormFrame } from "@/components/forms/form-frame";
@@ -461,9 +462,9 @@ export function ConstructionContractForm({
           ) : (
             <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
               No projects in the database yet.{" "}
-              <a href="/dashboard/projects/new" className="font-medium underline">
+              <Link href="/dashboard/projects/new" className="font-medium underline">
                 Create a project
-              </a>{" "}
+              </Link>{" "}
               first, then return here.
             </p>
           )}
@@ -618,21 +619,28 @@ export function ConstructionProjectForm({ managers }: { managers: Option[] }) {
   const router = useRouter();
   return <FormFrame onSubmit={async (data) => {
     const result = await createConstructionProject(data);
-    if (result.success && result.id) router.push(`/dashboard/projects/${result.id}`);
+    if (result.success && result.id) router.push(`/dashboard/projects/${result.id}?created=1`);
     return result;
   }}>
     <div className="grid gap-4 sm:grid-cols-2">
-      <div className="space-y-2"><Label htmlFor="name">Project name</Label><Input id="name" name="name" required /></div>
-      <div className="space-y-2"><Label htmlFor="clientName">Client</Label><Input id="clientName" name="clientName" /></div>
+      <div className="space-y-2"><Label htmlFor="name">Project title</Label><Input id="name" name="name" required /></div>
+      <div className="space-y-2"><Label htmlFor="procurementRefNo">Procurement reference no.</Label><Input id="procurementRefNo" name="procurementRefNo" /></div>
+      <div className="space-y-2 sm:col-span-2"><Label htmlFor="description">Scope of works</Label><Textarea id="description" name="description" rows={4} /></div>
+      <div className="space-y-2"><Label htmlFor="clientName">Client / implementing agency</Label><Input id="clientName" name="clientName" /></div>
+      <div className="space-y-2"><Label htmlFor="projectManagerId">Project manager (NSSF)</Label><Select id="projectManagerId" name="projectManagerId" defaultValue=""><option value="">Assign later</option>{managers.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}</Select></div>
+      <div className="space-y-2"><Label htmlFor="supervisingConsultant">Supervising consultant</Label><Input id="supervisingConsultant" name="supervisingConsultant" /></div>
+      <div className="space-y-2"><Label htmlFor="contractor">Contractor</Label><Input id="contractor" name="contractor" /></div>
       <div className="space-y-2"><Label htmlFor="location">Site location</Label><Input id="location" name="location" /></div>
       <div className="space-y-2"><Label htmlFor="city">City / district</Label><Input id="city" name="city" /></div>
-      <div className="space-y-2"><Label htmlFor="startDate">Start date</Label><Input id="startDate" name="startDate" type="date" /></div>
-      <div className="space-y-2"><Label htmlFor="expectedCompletion">Target completion</Label><Input id="expectedCompletion" name="expectedCompletion" type="date" /></div>
-      <div className="space-y-2"><Label htmlFor="contractValue">Contract value (UGX)</Label><Input id="contractValue" name="contractValue" type="number" min={0} /></div>
+      <div className="space-y-2"><Label htmlFor="contractCurrency">Contract currency</Label><Select id="contractCurrency" name="contractCurrency" defaultValue="UGX"><option value="UGX">UGX</option><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option></Select></div>
+      <div className="space-y-2"><Label htmlFor="contractValue">Contract value</Label><Input id="contractValue" name="contractValue" type="number" min={0} step="0.01" /></div>
+      <div className="space-y-2"><Label htmlFor="amendedContractValue">Amended contract value</Label><Input id="amendedContractValue" name="amendedContractValue" type="number" min={0} step="0.01" /></div>
       <div className="space-y-2"><Label htmlFor="approvedBudget">Approved budget (UGX)</Label><Input id="approvedBudget" name="approvedBudget" type="number" min={0} /></div>
+      <div className="space-y-2"><Label htmlFor="contractSignatureDate">Contract signature date</Label><Input id="contractSignatureDate" name="contractSignatureDate" type="date" /></div>
+      <div className="space-y-2"><Label htmlFor="startDate">Commencement date</Label><Input id="startDate" name="startDate" type="date" /></div>
+      <div className="space-y-2"><Label htmlFor="expectedCompletion">Intended completion date</Label><Input id="expectedCompletion" name="expectedCompletion" type="date" /></div>
+      <div className="space-y-2"><Label htmlFor="extendedCompletion">Extended completion date</Label><Input id="extendedCompletion" name="extendedCompletion" type="date" /></div>
     </div>
-    <div className="space-y-2"><Label htmlFor="projectManagerId">Project manager</Label><Select id="projectManagerId" name="projectManagerId" defaultValue=""><option value="">Assign later</option>{managers.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}</Select></div>
-    <div className="space-y-2"><Label htmlFor="description">Scope summary</Label><Textarea id="description" name="description" rows={4} /></div>
   </FormFrame>;
 }
 

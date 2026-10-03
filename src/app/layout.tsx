@@ -38,6 +38,7 @@ export const metadata: Metadata = {
   publisher: SITE.legalName,
   category: "real estate",
   alternates: { canonical: "/" },
+  other: { llms: "/llms.txt", "llms-full": "/llms-full.txt" },
   openGraph: {
     type: "website",
     locale: "en_UG",

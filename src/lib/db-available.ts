@@ -8,6 +8,7 @@ let available: boolean | null = null;
 let checkedAt = 0;
 let inflight: Promise<boolean> | null = null;
 const RETRY_AFTER_MS = 5_000;
+const PROBE_TIMEOUT_MS = 5_000;
 
 function hostnameOf(url?: string) {
   if (!url) return "";
@@ -48,7 +49,7 @@ export async function isDatabaseAvailable(): Promise<boolean> {
       await Promise.race([
         db.$queryRaw`SELECT 1`,
         new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error("database timeout")), 800);
+          setTimeout(() => reject(new Error("database timeout")), PROBE_TIMEOUT_MS);
         }),
       ]);
       available = true;

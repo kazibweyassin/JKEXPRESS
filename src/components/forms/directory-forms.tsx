@@ -88,25 +88,32 @@ export function EmployeeStatusForm({
 export function DocumentForm({
   properties,
   projects,
+  reportOnly = false,
+  categoryOptions,
 }: {
   properties: Option[];
   projects: Option[];
+  reportOnly?: boolean;
+  categoryOptions?: Array<{ value: string; label: string }>;
 }) {
+  const categories = categoryOptions ?? [
+    { value: "CONTRACT", label: "Contract" },
+    { value: "PERMIT", label: "Permit" },
+    { value: "REPORT", label: "Report" },
+    { value: "INVOICE", label: "Invoice" },
+    { value: "DRAWING", label: "Drawing" },
+    { value: "GENERAL", label: "General" },
+  ];
   return (
-    <FormFrame onSubmit={createDocument} submitLabel="Upload to R2">
+    <FormFrame onSubmit={createDocument} submitLabel={reportOnly ? "Upload report" : "Upload to R2"}>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2"><Label htmlFor="doc-title">Title</Label><Input id="doc-title" name="title" required /></div>
-        <div className="space-y-2">
+        {!reportOnly ? <div className="space-y-2">
           <Label htmlFor="doc-category">Category</Label>
-          <Select id="doc-category" name="category" defaultValue="CONTRACT">
-            <option value="CONTRACT">Contract</option>
-            <option value="PERMIT">Permit</option>
-            <option value="REPORT">Report</option>
-            <option value="INVOICE">Invoice</option>
-            <option value="DRAWING">Drawing</option>
-            <option value="GENERAL">General</option>
+          <Select id="doc-category" name="category" defaultValue={categories[0]?.value}>
+            {categories.map((category) => <option key={category.value} value={category.value}>{category.label}</option>)}
           </Select>
-        </div>
+        </div> : <input type="hidden" name="category" value="REPORT" />}
         <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="doc-file">File</Label>
           <Input
@@ -120,17 +127,17 @@ export function DocumentForm({
             Uploaded to Cloudflare R2. PDF, Word, Excel, image, zip or text. 25 MB max.
           </p>
         </div>
-        <div className="space-y-2">
+        {!reportOnly ? <div className="space-y-2">
           <Label htmlFor="doc-property">Property</Label>
           <Select id="doc-property" name="propertyId" defaultValue="">
             <option value="">None</option>
             {properties.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
           </Select>
-        </div>
+        </div> : <input type="hidden" name="propertyId" value="" />}
         <div className="space-y-2">
           <Label htmlFor="doc-project">Project</Label>
-          <Select id="doc-project" name="projectId" defaultValue="">
-            <option value="">None</option>
+          <Select id="doc-project" name="projectId" required={reportOnly} defaultValue="">
+            {!reportOnly ? <option value="">None</option> : null}
             {projects.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
           </Select>
         </div>

@@ -13,7 +13,7 @@ import {
   documentKey,
 } from "@/lib/document-upload";
 import { hasPermission } from "@/lib/permissions";
-import { deleteR2Images, r2KeyFromPublicUrl, uploadR2File } from "@/lib/r2-storage";
+import { deleteR2Images, uploadR2File } from "@/lib/r2-storage";
 
 export type ActionResult =
   | { success: true; id?: string }
@@ -21,7 +21,7 @@ export type ActionResult =
 
 async function requireUser(
   resource: string,
-  action: "create" | "edit" | "delete",
+  action: "view" | "create" | "edit" | "delete",
 ) {
   const session = await auth();
   if (!session?.user || !hasPermission(session.user.permissions, resource, action)) {
@@ -205,7 +205,7 @@ export async function createDocument(formData: FormData): Promise<ActionResult> 
         uploadedById: actor.id,
       },
     });
-    revalidate(["/dashboard/documents"]);
+    revalidate(["/dashboard/documents", "/dashboard/progress", "/dashboard/contracts"]);
     return { success: true, id: document.id };
   } catch (error) {
     if (uploadedKey) await deleteR2Images([uploadedKey]).catch(() => undefined);
@@ -219,7 +219,10 @@ export async function createDocument(formData: FormData): Promise<ActionResult> 
 }
 
 export async function deleteDocument(formData: FormData): Promise<ActionResult> {
-  const actor = await requireUser("documents", "edit");
+  const documentEditor = await requireUser("documents", "edit");
+  const projectEditor = documentEditor ? null : await requireUser("projects", "edit");
+  const projectViewer = documentEditor || projectEditor ? null : await requireUser("projects", "view");
+  const actor = documentEditor ?? projectEditor ?? projectViewer;
   if (!actor) return { success: false, error: "Forbidden" };
 
   try {
@@ -227,14 +230,42 @@ export async function deleteDocument(formData: FormData): Promise<ActionResult> 
     if (!id) return { success: false, error: "Document is required." };
     const document = await db.document.findUnique({ where: { id } });
     if (!document) return { success: false, error: "Document not found." };
-    const key = r2KeyFromPublicUrl(document.fileUrl);
-    if (key) await deleteR2Images([key]).catch(() => undefined);
+    if ((projectEditor || projectViewer) && (!document.projectId || !["REPORT", "CONTRACT", "INVOICE"].includes(document.category))) {
+      return { success: false, error: "You can only remove construction project documents here." };
+    }
     await db.document.update({ where: { id }, data: { deletedAt: new Date() } });
-    revalidate(["/dashboard/documents"]);
+    revalidate(["/dashboard/documents", "/dashboard/progress", "/dashboard/contracts"]);
     return { success: true, id };
   } catch (error) {
     console.error(error);
     return { success: false, error: "Could not remove the document." };
+  }
+}
+
+export async function restoreDocument(formData: FormData): Promise<ActionResult> {
+  const documentEditor = await requireUser("documents", "edit");
+  const projectEditor = documentEditor ? null : await requireUser("projects", "edit");
+  const projectViewer = documentEditor || projectEditor ? null : await requireUser("projects", "view");
+  const actor = documentEditor ?? projectEditor ?? projectViewer;
+  if (!actor) return { success: false, error: "Forbidden" };
+
+  try {
+    const id = text(formData, "id");
+    if (!id) return { success: false, error: "Document is required." };
+    const document = await db.document.findUnique({ where: { id } });
+    if (!document) return { success: false, error: "Document not found." };
+    if ((projectEditor || projectViewer) && (!document.projectId || !["REPORT", "CONTRACT", "INVOICE"].includes(document.category))) {
+      return { success: false, error: "You can only restore construction project documents here." };
+    }
+    if (!document.deletedAt || document.deletedAt < new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)) {
+      return { success: false, error: "This document is outside the 30-day recovery window." };
+    }
+    await db.document.update({ where: { id }, data: { deletedAt: null } });
+    revalidate(["/dashboard/documents", "/dashboard/progress", "/dashboard/contracts"]);
+    return { success: true, id };
+  } catch (error) {
+    console.error(error);
+    return { success: false, error: "Could not restore the document." };
   }
 }
 

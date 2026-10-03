@@ -17,6 +17,8 @@ import { db } from "@/lib/db";
 import { safeQuery } from "@/lib/safe-query";
 import { formatDate, statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
+import { AlertTriangle, Truck, Wrench } from "lucide-react";
+import { StatCard } from "@/components/ui/stat-card";
 
 export const metadata = { title: "Equipment" };
 
@@ -30,10 +32,19 @@ export default async function EquipmentPage() {
       }),
     [],
   );
+  const serviceCutoff = new Date();
+  serviceCutoff.setDate(serviceCutoff.getDate() + 30);
+  const serviceDue = equipment.filter((item) => item.nextServiceDate && item.nextServiceDate <= serviceCutoff).length;
+  const poorCondition = equipment.filter((item) => ["POOR", "DAMAGED"].includes(item.condition)).length;
 
   return (
     <div>
       <PageHeader title="Equipment" description="Company plant and tools. Subcontractor plant stays off this register." />
+      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+        <StatCard title="Equipment" value={equipment.length} icon={Truck} subtitle="Registered company assets" />
+        <StatCard title="Service due" value={serviceDue} icon={Wrench} subtitle="Within the next 30 days" tone={serviceDue ? "warning" : "success"} />
+        <StatCard title="Needs attention" value={poorCondition} icon={AlertTriangle} subtitle="Poor or damaged condition" tone={poorCondition ? "danger" : "success"} />
+      </div>
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="text-base">Register equipment</CardTitle>
@@ -42,8 +53,8 @@ export default async function EquipmentPage() {
           <EquipmentForm />
         </CardContent>
       </Card>
-      <div className="rounded-xl border border-slate-200 bg-white">
-        <Table>
+      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+        <Table className="min-w-[760px]">
           <TableHeader>
             <TableRow>
               <TableHead>Code</TableHead>

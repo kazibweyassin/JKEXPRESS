@@ -67,6 +67,7 @@ export const dashboardNavGroups: NavGroup[] = [
     id: "construction",
     label: "Construction",
     items: [
+      { href: "/dashboard/construction", label: "Overview", icon: LayoutDashboard, resource: "projects" },
       { href: "/dashboard/projects", label: "Projects", icon: HardHat, resource: "projects" },
       { href: "/dashboard/quotations", label: "Quotations", icon: FileText, resource: "projects" },
       { href: "/dashboard/progress", label: "Weekly progress", icon: ClipboardCheck, resource: "projects" },

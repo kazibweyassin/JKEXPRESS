@@ -12,6 +12,7 @@
     "db:migrate:dev": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:construction-samples": "tsx scripts/seed-construction-samples.ts",
+    "db:cleanup-deleted-documents": "tsx scripts/cleanup-deleted-documents.ts",
     "db:setup": "prisma migrate deploy && tsx prisma/seed.ts",
     "postinstall": "prisma generate",
     "test": "vitest run"

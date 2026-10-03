@@ -14,8 +14,9 @@ import { db } from "@/lib/db";
 import { safeQuery } from "@/lib/safe-query";
 import { formatCurrency, formatDate, statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
-import { ShoppingCart } from "lucide-react";
+import { CheckCircle2, Clock3, PackageCheck, ShoppingCart } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatCard } from "@/components/ui/stat-card";
 import {
   PurchaseRequestForm,
   SupplierQuoteForm,
@@ -77,6 +78,9 @@ export default async function ProcurementPage() {
     id: item.id,
     label: `${item.sku} — ${item.name} (${item.unit})`,
   }));
+  const pendingRequests = requests.filter((request) => ["SUBMITTED", "PENDING_APPROVAL", "PM_REVIEW"].includes(request.status)).length;
+  const receivedRequests = requests.filter((request) => request.status === "RECEIVED").length;
+  const openOrders = requests.reduce((count, request) => count + request.orders.filter((order) => ["ISSUED", "PARTIAL"].includes(order.status)).length, 0);
 
   return (
     <div>
@@ -84,6 +88,12 @@ export default async function ProcurementPage() {
         title="Material purchase"
         description="Request → supplier quotes → purchase order → goods received into stores."
       />
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard title="Purchase requests" value={requests.length} icon={ShoppingCart} subtitle="All requests" />
+        <StatCard title="Needs action" value={pendingRequests} icon={Clock3} subtitle="Awaiting review or approval" tone={pendingRequests ? "warning" : "success"} />
+        <StatCard title="Open orders" value={openOrders} icon={PackageCheck} subtitle="Issued or partially received" />
+        <StatCard title="Received" value={receivedRequests} icon={CheckCircle2} subtitle="Requests completed" tone="success" />
+      </div>
       <Card className="mb-6">
         <CardHeader><CardTitle className="text-base">New purchase request</CardTitle></CardHeader>
         <CardContent>
@@ -117,7 +127,7 @@ export default async function ProcurementPage() {
                   <p className="text-slate-600">
                     {pr.requester.name} · {pr.project?.name ?? "General"} · {formatDate(pr.createdAt)}
                   </p>
-                  <Table>
+                  <Table className="min-w-[560px]">
                     <TableHeader>
                       <TableRow>
                         <TableHead>Item</TableHead>
@@ -141,7 +151,7 @@ export default async function ProcurementPage() {
                   </Table>
 
                   {pr.quotations.length ? (
-                    <Table>
+                    <Table className="min-w-[560px]">
                       <TableHeader>
                         <TableRow>
                           <TableHead>Supplier quote</TableHead>

@@ -815,6 +815,9 @@ model ConstructionProject {
   name                 String
   description          String?
   clientName           String?
+  procurementRefNo     String?
+  supervisingConsultant String?
+  contractor           String?
   projectManagerId     String?
   projectManager       Employee? @relation("ProjectManager", fields: [projectManagerId], references: [id])
   location             String?
@@ -823,7 +826,11 @@ model ConstructionProject {
   startDate            DateTime?
   expectedCompletion   DateTime?
   actualCompletion     DateTime?
+  extendedCompletion   DateTime?
   contractValue        Decimal?
+  amendedContractValue Decimal?
+  contractCurrency     String    @default("UGX")
+  contractSignatureDate DateTime?
   approvedBudget       Decimal?
   currentExpenditure   Decimal   @default(0)
   completionPercentage Float     @default(0)

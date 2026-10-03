@@ -28,12 +28,7 @@ export function Logo({
       width={w}
       height={h}
       priority={priority}
-      className={cn("h-auto w-auto object-contain object-left", className)}
-      style={{
-        height: h,
-        width: "auto",
-        maxWidth: variant === "compact" ? 200 : 280,
-      }}
+      className={cn("object-contain object-left", className)}
     />
   );
 }

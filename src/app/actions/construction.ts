@@ -93,21 +93,32 @@ export async function createConstructionProject(formData: FormData): Promise<Act
   try {
     const data = z.object({
       name: z.string().min(3).max(160), clientName: z.string().max(160).optional(),
+      procurementRefNo: z.string().max(160).optional(),
+      supervisingConsultant: z.string().max(200).optional(), contractor: z.string().max(200).optional(),
       location: z.string().max(200).optional(), city: z.string().max(100).optional(),
       description: z.string().max(3000).optional(), projectManagerId: z.string().optional(),
-      contractValue: z.coerce.number().nonnegative().optional(), approvedBudget: z.coerce.number().nonnegative().optional(),
+      contractValue: z.coerce.number().nonnegative().optional(), amendedContractValue: z.coerce.number().nonnegative().optional(),
+      contractCurrency: z.string().length(3).optional(), approvedBudget: z.coerce.number().nonnegative().optional(),
     }).parse({
       name: formData.get("name"), clientName: formData.get("clientName") || undefined,
+      procurementRefNo: formData.get("procurementRefNo") || undefined,
+      supervisingConsultant: formData.get("supervisingConsultant") || undefined,
+      contractor: formData.get("contractor") || undefined,
       location: formData.get("location") || undefined, city: formData.get("city") || undefined,
       description: formData.get("description") || undefined,
       projectManagerId: formData.get("projectManagerId") || undefined,
       contractValue: formData.get("contractValue") || undefined,
+      amendedContractValue: formData.get("amendedContractValue") || undefined,
+      contractCurrency: formData.get("contractCurrency") || undefined,
       approvedBudget: formData.get("approvedBudget") || undefined,
     });
     const project = await db.constructionProject.create({ data: {
       ...data, code: reference("PRJ"), slug: `${slugify(data.name)}-${nanoid(5).toLowerCase()}`,
       startDate: optionalDate(formData.get("startDate")),
-      expectedCompletion: optionalDate(formData.get("expectedCompletion")), status: "PLANNING",
+      expectedCompletion: optionalDate(formData.get("expectedCompletion")),
+      extendedCompletion: optionalDate(formData.get("extendedCompletion")),
+      contractSignatureDate: optionalDate(formData.get("contractSignatureDate")),
+      status: "PLANNING",
     }});
     revalidatePath("/dashboard/projects");
     return { success: true, id: project.id };

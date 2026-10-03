@@ -28,11 +28,14 @@ import {
 
 export default async function ProjectDetailDashboardPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ created?: string }>;
 }) {
   await requirePagePermission("projects");
   const { id } = await params;
+  const created = (await searchParams)?.created === "1";
   const project = await safeQuery(
     () =>
       db.constructionProject.findFirst({
@@ -97,6 +100,7 @@ export default async function ProjectDetailDashboardPage({
 
   return (
     <div>
+      {created ? <p className="mb-4 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800" role="status">Project created successfully.</p> : null}
       <PageHeader
         title={project.name}
         description={`${project.code} · ${project.location ?? project.city ?? ""}`}

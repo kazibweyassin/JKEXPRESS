@@ -1,4 +1,5 @@
 import { type LucideIcon } from "lucide-react";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +11,7 @@ export function StatCard({
   trend,
   tone = "default",
   progress,
+  href,
   className,
 }: {
   title: string;
@@ -19,6 +21,7 @@ export function StatCard({
   trend?: string;
   tone?: "default" | "warning" | "danger" | "success";
   progress?: number;
+  href?: string;
   className?: string;
 }) {
   const tones = {
@@ -28,8 +31,8 @@ export function StatCard({
     success: { value: "text-emerald-800", icon: "bg-emerald-50 text-emerald-800" },
   }[tone];
 
-  return (
-    <Card className={cn("overflow-hidden", className)}>
+  const card = (
+    <Card className={cn("overflow-hidden", href ? "transition-shadow hover:shadow-md" : "", className)}>
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -70,4 +73,6 @@ export function StatCard({
       </CardContent>
     </Card>
   );
+
+  return href ? <Link href={href} className="block rounded-xl focus:outline-none focus:ring-2 focus:ring-navy-400">{card}</Link> : card;
 }

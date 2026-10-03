@@ -1,28 +1,20 @@
 import { PageHeader } from "@/components/ui/page-header";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { EmptyState } from "@/components/ui/empty-state";
 import { DocumentForm } from "@/components/forms/directory-forms";
-import { RowAction } from "@/components/forms/form-frame";
-import { deleteDocument } from "@/app/actions/directory";
+import { DocumentLibrary } from "@/components/documents/document-library";
+import { StatCard } from "@/components/ui/stat-card";
 import { requirePagePermission } from "@/lib/auth-guard";
+import { hasSessionPermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { safeQuery } from "@/lib/safe-query";
-import { formatDate, statusLabel } from "@/lib/utils";
-import { FolderOpen } from "lucide-react";
+import { FileStack, FolderOpen, FileText } from "lucide-react";
 
 export const metadata = { title: "Documents" };
 
 export default async function DocumentsPage() {
-  await requirePagePermission("documents");
+  const session = await requirePagePermission("documents");
+  const canUpload = hasSessionPermission(session, "documents", "create");
+  const canDelete = hasSessionPermission(session, "documents", "edit");
   const [documents, properties, projects] = await Promise.all([
     safeQuery(
       () =>
@@ -43,14 +35,34 @@ export default async function DocumentsPage() {
       [],
     ),
   ]);
+  const categoryCounts = documents.reduce<Record<string, number>>((counts, document) => {
+    counts[document.category] = (counts[document.category] ?? 0) + 1;
+    return counts;
+  }, {});
+  const libraryDocuments = documents.map((document) => ({
+    id: document.id,
+    title: document.title,
+    fileUrl: document.fileUrl,
+    fileName: document.fileName,
+    category: document.category,
+    createdAt: document.createdAt.toISOString(),
+    projectName: document.project?.name ?? null,
+    propertyName: document.property?.title ?? null,
+    uploadedByName: document.uploadedBy?.name ?? null,
+  }));
 
   return (
     <div>
       <PageHeader
         title="Documents"
-        description="Contracts, permits and reports are uploaded to Cloudflare R2. Click a title to open the file."
+        description="One searchable library for contracts, reports, IPCs, permits and project files."
       />
-      <Card className="mb-6">
+      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+        <StatCard title="All documents" value={documents.length} icon={FileStack} subtitle="Latest 100 files" />
+        <StatCard title="Reports" value={categoryCounts.REPORT ?? 0} icon={FileText} subtitle="Progress and site reports" />
+        <StatCard title="Contracts & IPCs" value={(categoryCounts.CONTRACT ?? 0) + (categoryCounts.INVOICE ?? 0)} icon={FolderOpen} subtitle="Commercial records" />
+      </div>
+      {canUpload ? <Card className="mb-6">
         <CardHeader>
           <CardTitle className="text-base">Add document</CardTitle>
         </CardHeader>
@@ -60,57 +72,13 @@ export default async function DocumentsPage() {
             projects={projects.map((item) => ({ id: item.id, label: `${item.code} — ${item.name}` }))}
           />
         </CardContent>
-      </Card>
-      {documents.length === 0 ? (
-        <EmptyState
-          icon={FolderOpen}
-          title="No documents yet"
-          description="Upload a contract, permit or report and it will be stored in R2."
-        />
-      ) : (
-        <div className="rounded-xl border border-slate-200 bg-white">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Related</TableHead>
-                <TableHead>Uploaded by</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {documents.map((doc) => (
-                <TableRow key={doc.id}>
-                  <TableCell className="font-medium">
-                    <a href={doc.fileUrl} className="text-navy-800 hover:underline" target="_blank" rel="noreferrer">
-                      {doc.title}
-                    </a>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{statusLabel(doc.category)}</Badge>
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    {doc.property?.title ?? doc.project?.name ?? "—"}
-                  </TableCell>
-                  <TableCell>{doc.uploadedBy?.name ?? "—"}</TableCell>
-                  <TableCell>{formatDate(doc.createdAt)}</TableCell>
-                  <TableCell>
-                    <RowAction
-                      action={deleteDocument}
-                      name="id"
-                      value={doc.id}
-                      label="Remove"
-                      confirm="Remove this document from the register?"
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+      </Card> : <p className="mb-6 rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">You have view-only access to the document library.</p>}
+      <DocumentLibrary
+        documents={libraryDocuments}
+        categories={Object.keys(categoryCounts)}
+        projects={projects.map((project) => ({ id: project.id, label: `${project.code} — ${project.name}` }))}
+        canDelete={canDelete}
+      />
     </div>
   );
 }

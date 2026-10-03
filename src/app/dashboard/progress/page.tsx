@@ -1,5 +1,4 @@
 import { PageHeader } from "@/components/ui/page-header";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -9,31 +8,43 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { WeeklyProgressForm } from "@/components/forms/construction-forms";
+import { DocumentForm } from "@/components/forms/directory-forms";
+import { RowAction } from "@/components/forms/form-frame";
+import { deleteDocument, restoreDocument } from "@/app/actions/directory";
 import { requirePagePermission } from "@/lib/auth-guard";
-import { PROGRESS_STANDARD } from "@/lib/construction-standards";
 import { db } from "@/lib/db";
 import { safeQuery } from "@/lib/safe-query";
-import { formatDate, statusLabel } from "@/lib/utils";
-import { statusVariant } from "@/lib/status";
+import { formatDate } from "@/lib/utils";
+import { FileText } from "lucide-react";
 
 export const metadata = { title: "Weekly progress" };
 
 export default async function WeeklyProgressPage() {
   await requirePagePermission("projects");
+  const recoveryCutoff = new Date();
+  recoveryCutoff.setDate(recoveryCutoff.getDate() - 30);
 
-  const [reports, projects, contractors] = await Promise.all([
+  const [reports, deletedReports, projects] = await Promise.all([
     safeQuery(
       () =>
-        db.weeklyProgressReport.findMany({
+        db.document.findMany({
+          where: { deletedAt: null, category: "REPORT" },
           include: {
             project: true,
-            enteredBy: true,
-            contractor: true,
+            uploadedBy: true,
           },
-          orderBy: { weekStarting: "desc" },
+          orderBy: { createdAt: "desc" },
           take: 50,
         }),
+      [],
+    ),
+    safeQuery(
+      () => db.document.findMany({
+        where: { category: "REPORT", deletedAt: { gte: recoveryCutoff } },
+        include: { project: true, uploadedBy: true },
+        orderBy: { deletedAt: "desc" },
+        take: 50,
+      }),
       [],
     ),
     safeQuery(
@@ -45,88 +56,71 @@ export default async function WeeklyProgressPage() {
         }),
       [],
     ),
-    safeQuery(
-      () =>
-        db.contractor.findMany({
-          where: { deletedAt: null },
-          select: { id: true, name: true },
-          orderBy: { name: "asc" },
-        }),
-      [],
-    ),
   ]);
 
   return (
     <div>
       <PageHeader
         title="Weekly progress reports"
-        description={`${PROGRESS_STANDARD.name}. ${PROGRESS_STANDARD.enteredBy} records the official week from ${PROGRESS_STANDARD.source.toLowerCase()}.`}
+        description="Upload completed weekly progress reports for the project record."
       />
-
-      <div className="mb-6 rounded-xl border border-navy-100 bg-navy-50 px-4 py-3 text-sm text-navy-900">
-        <p className="font-semibold">Chosen standard: {PROGRESS_STANDARD.short}</p>
-        <p className="mt-1 text-navy-800">
-          Subcontractors send weekly progress. They do not type into this register.
-          The Site Engineer or Project Manager (JK Express employee) enters the
-          report after site inspection. Subcontractor labour is not stored as
-          company employees.
-        </p>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Enter this week</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <WeeklyProgressForm
-              projects={projects.map((p) => ({
-                id: p.id,
-                label: `${p.code} — ${p.name}`,
-              }))}
-              contractors={contractors.map((c) => ({ id: c.id, label: c.name }))}
-            />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Recent weeks</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-base">Upload a progress report</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <DocumentForm
+            properties={[]}
+            projects={projects.map((p) => ({ id: p.id, label: `${p.code} — ${p.name}` }))}
+            reportOnly
+          />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Uploaded reports</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {reports.length === 0 ? <div className="flex flex-col items-center gap-2 px-6 py-12 text-center text-slate-500"><FileText className="h-8 w-8" /><p>No progress reports uploaded yet.</p></div> :
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Week</TableHead>
+                  <TableHead>Report</TableHead>
                   <TableHead>Project</TableHead>
-                  <TableHead>Package</TableHead>
-                  <TableHead>%</TableHead>
-                  <TableHead>Entered by</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Uploaded by</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {reports.map((r) => (
-                  <TableRow key={r.id}>
-                    <TableCell className="text-xs">{formatDate(r.weekStarting)}</TableCell>
-                    <TableCell className="font-medium">{r.project.name}</TableCell>
-                    <TableCell className="text-xs">
-                      {r.contractor?.name ?? "Company works"}
-                      {r.appliesToProject ? " · official" : ""}
-                    </TableCell>
-                    <TableCell>{r.progressPercent ?? "—"}</TableCell>
-                    <TableCell className="text-xs">{r.enteredBy.name}</TableCell>
-                    <TableCell>
-                      <Badge variant={statusVariant(r.status)}>
-                        {statusLabel(r.status)}
-                      </Badge>
-                    </TableCell>
+                {reports.map((report) => (
+                  <TableRow key={report.id}>
+                    <TableCell className="font-medium"><a href={report.fileUrl} target="_blank" rel="noreferrer" className="text-navy-800 hover:underline">{report.title}</a></TableCell>
+                    <TableCell>{report.project?.name ?? "—"}</TableCell>
+                    <TableCell className="text-xs">{report.uploadedBy?.name ?? "—"}</TableCell>
+                    <TableCell>{formatDate(report.createdAt)}</TableCell>
+                    <TableCell><RowAction action={deleteDocument} name="id" value={report.id} label="Remove" confirm="Remove this uploaded report?" /></TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
-      </div>
+          }
+        </CardContent>
+      </Card>
+      {deletedReports.length ? <Card className="mt-6">
+        <CardHeader><CardTitle className="text-base">Deleted reports · recoverable for 30 days</CardTitle></CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader><TableRow><TableHead>Report</TableHead><TableHead>Project</TableHead><TableHead>Deleted</TableHead><TableHead /></TableRow></TableHeader>
+            <TableBody>{deletedReports.map((report) => <TableRow key={report.id}>
+              <TableCell className="font-medium">{report.title}</TableCell>
+              <TableCell>{report.project?.name ?? "—"}</TableCell>
+              <TableCell>{report.deletedAt ? formatDate(report.deletedAt) : "—"}</TableCell>
+              <TableCell><RowAction action={restoreDocument} name="id" value={report.id} label="Recover" confirm="Recover this report?" /></TableCell>
+            </TableRow>)}</TableBody>
+          </Table>
+        </CardContent>
+      </Card> : null}
     </div>
   );
 }

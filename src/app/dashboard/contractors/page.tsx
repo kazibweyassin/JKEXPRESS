@@ -14,6 +14,8 @@ import {
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { safeQuery } from "@/lib/safe-query";
+import { HardHat, Mail } from "lucide-react";
+import { StatCard } from "@/components/ui/stat-card";
 
 export const metadata = { title: "Contractors" };
 
@@ -27,6 +29,7 @@ export default async function ContractorsPage() {
       }),
     [],
   );
+  const contractorsWithEmail = contractors.filter((contractor) => contractor.email).length;
 
   return (
     <div>
@@ -34,6 +37,10 @@ export default async function ContractorsPage() {
         title="Subcontractors"
         description="External works packages. Assign them to a project; do not add their workers to Employees."
       />
+      <div className="mb-6 grid gap-4 sm:grid-cols-2">
+        <StatCard title="Subcontractors" value={contractors.length} icon={HardHat} subtitle="External delivery partners" />
+        <StatCard title="Contactable" value={contractorsWithEmail} icon={Mail} subtitle="Subcontractors with email" />
+      </div>
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="text-base">Register subcontractor</CardTitle>
@@ -42,8 +49,8 @@ export default async function ContractorsPage() {
           <ContractorForm />
         </CardContent>
       </Card>
-      <div className="rounded-xl border border-slate-200 bg-white">
-        <Table>
+      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+        <Table className="min-w-[700px]">
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>

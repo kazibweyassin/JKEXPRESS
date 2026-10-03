@@ -25,7 +25,7 @@ import { mondayOf } from "@/lib/construction-standards";
 import { db } from "@/lib/db";
 import { isDatabaseAvailable } from "@/lib/db-available";
 import { safeQuery } from "@/lib/safe-query";
-import { formatCurrency, formatDate, statusLabel } from "@/lib/utils";
+import { formatCurrency, formatDate, formatDateTime, statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
 
 export const metadata = { title: "Dashboard" };
@@ -34,6 +34,7 @@ function fetchDashboardData(now: Date, in90: Date) {
   return Promise.all([
     safeQuery(() => db.constructionProject.count({ where: { status: "ACTIVE", deletedAt: null } }), 0),
     safeQuery(() => db.constructionProject.count({ where: { status: "COMPLETED", deletedAt: null } }), 0),
+    safeQuery(() => db.constructionProject.count({ where: { deletedAt: null } }), 0),
     safeQuery(() => db.property.count({ where: { deletedAt: null } }), 0),
     safeQuery(() => db.property.count({ where: { status: "AVAILABLE", deletedAt: null } }), 0),
     safeQuery(() => db.unit.count({ where: { status: "OCCUPIED", deletedAt: null } }), 0),
@@ -60,7 +61,7 @@ function fetchDashboardData(now: Date, in90: Date) {
       () =>
         db.constructionProject.aggregate({
           _sum: { approvedBudget: true, currentExpenditure: true },
-          where: { deletedAt: null, status: { in: ["ACTIVE", "ON_HOLD", "DELAYED"] } },
+          where: { deletedAt: null },
         }),
       { _sum: { approvedBudget: null, currentExpenditure: null } },
     ),
@@ -69,7 +70,7 @@ function fetchDashboardData(now: Date, in90: Date) {
       () =>
         db.constructionProject.count({
           where: {
-            status: "ACTIVE",
+            status: { notIn: ["COMPLETED", "CANCELLED"] },
             deletedAt: null,
             weeklyReports: { none: { weekStarting: mondayOf(now) } },
           },
@@ -79,7 +80,7 @@ function fetchDashboardData(now: Date, in90: Date) {
     safeQuery(
       () =>
         db.constructionProject.findMany({
-          where: { deletedAt: null, status: { in: ["ACTIVE", "ON_HOLD", "DELAYED"] } },
+          where: { deletedAt: null },
           select: {
             id: true,
             name: true,
@@ -90,7 +91,7 @@ function fetchDashboardData(now: Date, in90: Date) {
             status: true,
           },
           orderBy: { updatedAt: "desc" },
-          take: 6,
+          take: 8,
         }),
       [],
     ),
@@ -100,7 +101,7 @@ function fetchDashboardData(now: Date, in90: Date) {
 type DashboardData = Awaited<ReturnType<typeof fetchDashboardData>>;
 
 const EMPTY_DASHBOARD_DATA = [
-  0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0,
   { _sum: { totalAmount: null } },
   { _sum: { amount: null } },
   { _sum: { balance: null } },
@@ -128,6 +129,7 @@ export default async function DashboardPage() {
   const [
     activeProjects,
     completedProjects,
+    totalProjects,
     totalProperties,
     availableProperties,
     occupiedUnits,
@@ -161,6 +163,7 @@ export default async function DashboardPage() {
         title="Executive overview"
         description={databaseOffline ? "Dashboard is available, but live database metrics are temporarily offline." : "Live metrics from construction, real estate and property operations."}
       />
+      <p className="-mt-4 mb-5 text-xs text-slate-500">Last refreshed {formatDateTime(now)}</p>
 
       {databaseOffline ? (
         <div className="mb-6 flex gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950" role="status">
@@ -200,7 +203,7 @@ export default async function DashboardPage() {
       </div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Active projects" value={activeProjects} icon={HardHat} subtitle={`${completedProjects} completed`} />
+        <StatCard title="Projects" value={totalProjects} icon={HardHat} subtitle={`${activeProjects} active · ${completedProjects} completed`} />
         <StatCard
           title="Construction spend"
           value={formatCurrency(constructionActual)}
@@ -231,9 +234,9 @@ export default async function DashboardPage() {
 
       <Card className="mt-6">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Live construction</CardTitle>
+          <CardTitle className="text-base">Project overview</CardTitle>
           <Link href="/dashboard/projects" className="text-sm text-navy-700 hover:underline">
-            View projects
+            Open projects
           </Link>
         </CardHeader>
         <CardContent>

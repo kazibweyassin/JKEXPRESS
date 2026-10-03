@@ -1,43 +1,29 @@
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  ConstructionContractForm,
-  IpcForm,
-  AddSpecificationForm,
-  MarkIpcPaidForm,
-} from "@/components/forms/construction-forms";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DocumentForm } from "@/components/forms/directory-forms";
+import { RowAction } from "@/components/forms/form-frame";
+import { deleteDocument } from "@/app/actions/directory";
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { safeQuery } from "@/lib/safe-query";
-import { formatCurrency, formatDate, statusLabel } from "@/lib/utils";
-import { statusVariant } from "@/lib/status";
+import { formatDate, statusLabel } from "@/lib/utils";
+import { FileText } from "lucide-react";
 
 export const metadata = { title: "Contracts & IPCs" };
 
 export default async function ContractsPage() {
   await requirePagePermission("projects");
 
-  const [contracts, projects, contractors] = await Promise.all([
+  const [documents, projects] = await Promise.all([
     safeQuery(
-      () =>
-        db.constructionContract.findMany({
-          include: {
-            project: true,
-            contractor: true,
-            specifications: { orderBy: { sortOrder: "asc" } },
-            ipcs: { orderBy: { createdAt: "desc" } },
-          },
-          orderBy: { createdAt: "desc" },
-        }),
+      () => db.document.findMany({
+        where: { deletedAt: null, category: { in: ["CONTRACT", "INVOICE"] } },
+        include: { project: true, uploadedBy: true },
+        orderBy: { createdAt: "desc" },
+        take: 100,
+      }),
       [],
     ),
     safeQuery(
@@ -49,137 +35,45 @@ export default async function ContractsPage() {
         }),
       [],
     ),
-    safeQuery(
-      () =>
-        db.contractor.findMany({
-          where: { deletedAt: null },
-          select: { id: true, name: true },
-          orderBy: { name: "asc" },
-        }),
-      [],
-    ),
   ]);
-
-  const projectOptions = projects.map((p) => ({
-    id: p.id,
-    label: `${p.code} — ${p.name}`,
-  }));
-  const contractorOptions = contractors.map((c) => ({ id: c.id, label: c.name }));
-  const contractOptions = contracts.map((c) => ({
-    id: c.id,
-    label: `${c.contractNumber} — ${c.title}`,
-    previousCertified: c.ipcs.reduce((sum, ipc) => sum + Number(ipc.amountDue), 0),
-  }));
 
   return (
     <div>
-      <PageHeader
-        title="Contracts, specifications & IPCs"
-        description="FIDIC-style construction contracts. Specifications live on the contract. Quantity surveyors certify Interim Payment Certificates against measured work."
-      />
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">New contract</CardTitle>
-          </CardHeader>
-          <CardContent className="overflow-visible">
-            <ConstructionContractForm
-              projects={projectOptions}
-              contractors={contractorOptions}
-            />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Certify IPC</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {contractOptions.length ? (
-              <IpcForm contracts={contractOptions} />
-            ) : (
-              <p className="text-sm text-slate-500">Create a contract first.</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="mt-8 space-y-6">
-        {contracts.map((contract) => (
-          <Card key={contract.id}>
-            <CardHeader>
-              <CardTitle className="flex flex-wrap items-center gap-2 text-base">
-                {contract.contractNumber} · {contract.title}
-                <Badge variant={statusVariant(contract.status)}>
-                  {statusLabel(contract.status)}
-                </Badge>
-                <Badge variant="secondary">{contract.formOfContract}</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-sm">
-              <p className="text-slate-600">
-                {contract.project.name} · {contract.type === "SUB" ? "Subcontract" : "Main"} ·{" "}
-                {contract.contractor?.name ?? "Client contract"} ·{" "}
-                {contract.contractSum
-                  ? formatCurrency(Number(contract.contractSum), contract.currency)
-                  : "Sum TBC"}
-              </p>
-              {contract.specifications.length ? (
-                <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Specifications
-                  </p>
-                  <ul className="space-y-1">
-                    {contract.specifications.map((spec) => (
-                      <li key={spec.id}>
-                        <span className="font-mono text-xs">{spec.clause}</span>{" "}
-                        {spec.title}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
-              {contract.ipcs.length ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>IPC</TableHead>
-                      <TableHead>Gross</TableHead>
-                      <TableHead>Retention</TableHead>
-                      <TableHead>Due</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {contract.ipcs.map((ipc) => (
-                      <TableRow key={ipc.id}>
-                        <TableCell className="font-mono text-xs">{ipc.ipcNumber}</TableCell>
-                        <TableCell>{formatCurrency(Number(ipc.grossAmount))}</TableCell>
-                        <TableCell>{formatCurrency(Number(ipc.retention))}</TableCell>
-                        <TableCell>{formatCurrency(Number(ipc.amountDue))}</TableCell>
-                        <TableCell>
-                          <Badge variant={statusVariant(ipc.status)}>
-                            {statusLabel(ipc.status)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs">{formatDate(ipc.createdAt)}</TableCell>
-                        <TableCell>
-                          {ipc.status === "CERTIFIED" ? <MarkIpcPaidForm ipcId={ipc.id} /> : null}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <p className="text-slate-500">No IPCs certified yet.</p>
-              )}
-              <AddSpecificationForm contractId={contract.id} />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <PageHeader title="Contracts & IPCs" description="Upload signed contracts and Interim Payment Certificates for the project record." />
+      <Card className="mb-6">
+        <CardHeader><CardTitle className="text-base">Upload contract or IPC</CardTitle></CardHeader>
+        <CardContent>
+          <DocumentForm
+            properties={[]}
+            projects={projects.map((project) => ({ id: project.id, label: `${project.code} — ${project.name}` }))}
+            categoryOptions={[{ value: "CONTRACT", label: "Contract" }, { value: "INVOICE", label: "IPC / payment certificate" }]}
+          />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader><CardTitle className="text-base">Uploaded contracts and IPCs</CardTitle></CardHeader>
+        <CardContent className="p-0">
+          {documents.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 px-6 py-12 text-center text-slate-500"><FileText className="h-8 w-8" /><p>No contracts or IPCs uploaded yet.</p></div>
+          ) : (
+            <Table>
+              <TableHeader><TableRow><TableHead>Document</TableHead><TableHead>Type</TableHead><TableHead>Project</TableHead><TableHead>Uploaded by</TableHead><TableHead>Date</TableHead><TableHead /></TableRow></TableHeader>
+              <TableBody>
+                {documents.map((document) => (
+                  <TableRow key={document.id}>
+                    <TableCell className="font-medium"><a href={document.fileUrl} target="_blank" rel="noreferrer" className="text-navy-800 hover:underline">{document.title}</a></TableCell>
+                    <TableCell><Badge variant="secondary">{statusLabel(document.category)}</Badge></TableCell>
+                    <TableCell>{document.project?.name ?? "—"}</TableCell>
+                    <TableCell className="text-xs">{document.uploadedBy?.name ?? "—"}</TableCell>
+                    <TableCell>{formatDate(document.createdAt)}</TableCell>
+                    <TableCell><RowAction action={deleteDocument} name="id" value={document.id} label="Remove" confirm="Remove this uploaded document?" /></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

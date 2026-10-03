@@ -18,6 +18,8 @@ import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { safeQuery } from "@/lib/safe-query";
 import { formatCurrency, statusLabel } from "@/lib/utils";
+import { AlertTriangle, ArrowDownToLine, Package } from "lucide-react";
+import { StatCard } from "@/components/ui/stat-card";
 
 export const metadata = { title: "Stores & materials" };
 
@@ -43,6 +45,8 @@ export default async function InventoryPage() {
       [],
     ),
   ]);
+  const lowStockCount = items.filter((item) => Number(item.quantityOnHand) <= Number(item.reorderLevel)).length;
+  const stockValue = items.reduce((total, item) => total + Number(item.quantityOnHand) * Number(item.unitCost ?? 0), 0);
 
   return (
     <div>
@@ -50,6 +54,11 @@ export default async function InventoryPage() {
         title="Stores & materials"
         description="Company stores only. Issue stock to a construction project; subcontractor materials stay off this register."
       />
+      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+        <StatCard title="Store items" value={items.length} icon={Package} subtitle="Registered materials" />
+        <StatCard title="Low stock" value={lowStockCount} icon={AlertTriangle} subtitle="At or below reorder level" tone={lowStockCount ? "warning" : "success"} />
+        <StatCard title="Stock value" value={formatCurrency(stockValue)} icon={ArrowDownToLine} subtitle="Based on unit cost" />
+      </div>
       <div className="mb-6 grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
@@ -94,8 +103,8 @@ export default async function InventoryPage() {
           />
         </CardContent>
       </Card>
-      <div className="rounded-xl border border-slate-200 bg-white">
-        <Table>
+      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+        <Table className="min-w-[820px]">
           <TableHeader>
             <TableRow>
               <TableHead>SKU</TableHead>

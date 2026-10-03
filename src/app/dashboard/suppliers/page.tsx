@@ -14,6 +14,8 @@ import {
 import { requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { safeQuery } from "@/lib/safe-query";
+import { Building2, Mail } from "lucide-react";
+import { StatCard } from "@/components/ui/stat-card";
 
 export const metadata = { title: "Suppliers" };
 
@@ -27,10 +29,15 @@ export default async function SuppliersPage() {
       }),
     [],
   );
+  const suppliersWithEmail = suppliers.filter((supplier) => supplier.email).length;
 
   return (
     <div>
       <PageHeader title="Suppliers" description="Supplier directory for material purchase." />
+      <div className="mb-6 grid gap-4 sm:grid-cols-2">
+        <StatCard title="Suppliers" value={suppliers.length} icon={Building2} subtitle="Active directory records" />
+        <StatCard title="Contactable" value={suppliersWithEmail} icon={Mail} subtitle="Suppliers with email" />
+      </div>
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="text-base">Register supplier</CardTitle>
@@ -39,8 +46,8 @@ export default async function SuppliersPage() {
           <SupplierForm />
         </CardContent>
       </Card>
-      <div className="rounded-xl border border-slate-200 bg-white">
-        <Table>
+      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+        <Table className="min-w-[700px]">
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>

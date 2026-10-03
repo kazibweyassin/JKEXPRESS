@@ -10,7 +10,7 @@ import {
 describe("seo helpers", () => {
   it("builds absolute canonical URLs", () => {
     expect(absoluteUrl("/properties")).toBe(
-      "https://jkexpress.ug/properties",
+      "https://www.jkexpressdevelopers.com/properties",
     );
     expect(absoluteUrl("https://images.unsplash.com/x")).toBe(
       "https://images.unsplash.com/x",
@@ -30,8 +30,8 @@ describe("seo helpers", () => {
       description: "Browse listings.",
       path: "/properties",
     });
-    expect(meta.alternates?.canonical).toBe("https://jkexpress.ug/properties");
-    expect(meta.openGraph?.url).toBe("https://jkexpress.ug/properties");
+    expect(meta.alternates?.canonical).toBe("https://www.jkexpressdevelopers.com/properties");
+    expect(meta.openGraph?.url).toBe("https://www.jkexpressdevelopers.com/properties");
   });
 
   it("covers core public routes and writes an llms.txt brief", () => {

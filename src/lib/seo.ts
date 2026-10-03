@@ -7,7 +7,7 @@ import {
   type PublicProperty,
 } from "@/lib/public-listings";
 
-export const DEFAULT_SITE_URL = "https://jkexpress.ug";
+export const DEFAULT_SITE_URL = "https://www.jkexpressdevelopers.com";
 
 const DEFAULT_DESCRIPTION =
   "JK Express Realtors & Developers Ltd. delivers construction, real estate brokerage and property management across Kampala, Entebbe, Jinja and Uganda.";

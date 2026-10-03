@@ -21,11 +21,11 @@ services:
       - key: NEXTAUTH_SECRET
         generateValue: true
       - key: AUTH_URL
-        sync: false
+        value: https://www.jkexpressdevelopers.com
       - key: NEXTAUTH_URL
-        sync: false
+        value: https://www.jkexpressdevelopers.com
       - key: NEXT_PUBLIC_APP_URL
-        sync: false
+        value: https://www.jkexpressdevelopers.com
       - key: R2_ACCOUNT_ID
         sync: false
       - key: R2_ACCESS_KEY_ID

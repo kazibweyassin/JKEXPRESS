@@ -14,6 +14,8 @@ import {
   createWeeklyProgress,
   issueStockToProject,
   createConstructionProject,
+  updateConstructionProject,
+  deleteConstructionProject,
   addProjectPlanItem,
   createBoq,
   createSiteReport,
@@ -615,33 +617,112 @@ export function IssueStockForm({
   );
 }
 
-export function ConstructionProjectForm({ managers }: { managers: Option[] }) {
+const PROJECT_STATUSES = [
+  ["PLANNING", "Planning"],
+  ["AWAITING_APPROVAL", "Awaiting approval"],
+  ["ACTIVE", "Active"],
+  ["ON_HOLD", "On hold"],
+  ["DELAYED", "Delayed"],
+  ["COMPLETED", "Completed"],
+  ["CANCELLED", "Cancelled"],
+] as const;
+
+export type ConstructionProjectFormValues = {
+  id: string;
+  code: string;
+  name: string;
+  procurementRefNo: string;
+  description: string;
+  clientName: string;
+  projectManagerId: string;
+  supervisingConsultant: string;
+  contractor: string;
+  location: string;
+  city: string;
+  contractCurrency: string;
+  contractValue: string;
+  amendedContractValue: string;
+  approvedBudget: string;
+  contractSignatureDate: string;
+  startDate: string;
+  expectedCompletion: string;
+  extendedCompletion: string;
+  status: string;
+};
+
+export function ConstructionProjectForm({
+  managers,
+  project,
+}: {
+  managers: Option[];
+  project?: ConstructionProjectFormValues;
+}) {
   const router = useRouter();
-  return <FormFrame onSubmit={async (data) => {
-    const result = await createConstructionProject(data);
-    if (result.success && result.id) router.push(`/dashboard/projects/${result.id}?created=1`);
-    return result;
-  }}>
+  return <FormFrame
+    submitLabel={project ? "Update project" : "Save"}
+    onSubmit={async (data) => {
+      const result = project
+        ? await updateConstructionProject(data)
+        : await createConstructionProject(data);
+      if (result.success && result.id) {
+        router.push(project ? `/dashboard/projects/${result.id}?updated=1` : `/dashboard/projects/${result.id}?created=1`);
+      }
+      return result;
+    }}
+  >
+    {project ? <input type="hidden" name="id" value={project.id} /> : null}
     <div className="grid gap-4 sm:grid-cols-2">
-      <div className="space-y-2"><Label htmlFor="name">Project title</Label><Input id="name" name="name" required /></div>
-      <div className="space-y-2"><Label htmlFor="procurementRefNo">Procurement reference no.</Label><Input id="procurementRefNo" name="procurementRefNo" /></div>
-      <div className="space-y-2 sm:col-span-2"><Label htmlFor="description">Scope of works</Label><Textarea id="description" name="description" rows={4} /></div>
-      <div className="space-y-2"><Label htmlFor="clientName">Client / implementing agency</Label><Input id="clientName" name="clientName" /></div>
-      <div className="space-y-2"><Label htmlFor="projectManagerId">Project manager (NSSF)</Label><Select id="projectManagerId" name="projectManagerId" defaultValue=""><option value="">Assign later</option>{managers.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}</Select></div>
-      <div className="space-y-2"><Label htmlFor="supervisingConsultant">Supervising consultant</Label><Input id="supervisingConsultant" name="supervisingConsultant" /></div>
-      <div className="space-y-2"><Label htmlFor="contractor">Contractor</Label><Input id="contractor" name="contractor" /></div>
-      <div className="space-y-2"><Label htmlFor="location">Site location</Label><Input id="location" name="location" /></div>
-      <div className="space-y-2"><Label htmlFor="city">City / district</Label><Input id="city" name="city" /></div>
-      <div className="space-y-2"><Label htmlFor="contractCurrency">Contract currency</Label><Select id="contractCurrency" name="contractCurrency" defaultValue="UGX"><option value="UGX">UGX</option><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option></Select></div>
-      <div className="space-y-2"><Label htmlFor="contractValue">Contract value</Label><Input id="contractValue" name="contractValue" type="number" min={0} step="0.01" /></div>
-      <div className="space-y-2"><Label htmlFor="amendedContractValue">Amended contract value</Label><Input id="amendedContractValue" name="amendedContractValue" type="number" min={0} step="0.01" /></div>
-      <div className="space-y-2"><Label htmlFor="approvedBudget">Approved budget (UGX)</Label><Input id="approvedBudget" name="approvedBudget" type="number" min={0} /></div>
-      <div className="space-y-2"><Label htmlFor="contractSignatureDate">Contract signature date</Label><Input id="contractSignatureDate" name="contractSignatureDate" type="date" /></div>
-      <div className="space-y-2"><Label htmlFor="startDate">Commencement date</Label><Input id="startDate" name="startDate" type="date" /></div>
-      <div className="space-y-2"><Label htmlFor="expectedCompletion">Intended completion date</Label><Input id="expectedCompletion" name="expectedCompletion" type="date" /></div>
-      <div className="space-y-2"><Label htmlFor="extendedCompletion">Extended completion date</Label><Input id="extendedCompletion" name="extendedCompletion" type="date" /></div>
+      {project ? <div className="space-y-2 sm:col-span-2"><p className="text-sm text-slate-500">Project code <span className="font-medium text-slate-800">{project.code}</span> stays the same.</p></div> : null}
+      <div className="space-y-2"><Label htmlFor="name">Project title</Label><Input id="name" name="name" required defaultValue={project?.name} /></div>
+      <div className="space-y-2"><Label htmlFor="procurementRefNo">Procurement reference no.</Label><Input id="procurementRefNo" name="procurementRefNo" defaultValue={project?.procurementRefNo} /></div>
+      <div className="space-y-2 sm:col-span-2"><Label htmlFor="description">Scope of works</Label><Textarea id="description" name="description" rows={4} defaultValue={project?.description} /></div>
+      <div className="space-y-2"><Label htmlFor="clientName">Client / implementing agency</Label><Input id="clientName" name="clientName" defaultValue={project?.clientName} /></div>
+      <div className="space-y-2"><Label htmlFor="projectManagerId">Project manager (NSSF)</Label><Select id="projectManagerId" name="projectManagerId" defaultValue={project?.projectManagerId ?? ""}><option value="">Assign later</option>{managers.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}</Select></div>
+      <div className="space-y-2"><Label htmlFor="supervisingConsultant">Supervising consultant</Label><Input id="supervisingConsultant" name="supervisingConsultant" defaultValue={project?.supervisingConsultant} /></div>
+      <div className="space-y-2"><Label htmlFor="contractor">Contractor</Label><Input id="contractor" name="contractor" defaultValue={project?.contractor} /></div>
+      <div className="space-y-2"><Label htmlFor="location">Site location</Label><Input id="location" name="location" defaultValue={project?.location} /></div>
+      <div className="space-y-2"><Label htmlFor="city">City / district</Label><Input id="city" name="city" defaultValue={project?.city} /></div>
+      <div className="space-y-2"><Label htmlFor="contractCurrency">Contract currency</Label><Select id="contractCurrency" name="contractCurrency" defaultValue={project?.contractCurrency || "UGX"}><option value="UGX">UGX</option><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option></Select></div>
+      <div className="space-y-2"><Label htmlFor="contractValue">Contract value</Label><Input id="contractValue" name="contractValue" type="number" min={0} step="0.01" defaultValue={project?.contractValue} /></div>
+      <div className="space-y-2"><Label htmlFor="amendedContractValue">Amended contract value</Label><Input id="amendedContractValue" name="amendedContractValue" type="number" min={0} step="0.01" defaultValue={project?.amendedContractValue} /></div>
+      <div className="space-y-2"><Label htmlFor="approvedBudget">Approved budget (UGX)</Label><Input id="approvedBudget" name="approvedBudget" type="number" min={0} defaultValue={project?.approvedBudget} /></div>
+      {project ? <div className="space-y-2"><Label htmlFor="status">Status</Label><Select id="status" name="status" defaultValue={project.status}>{PROJECT_STATUSES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></div> : null}
+      <div className="space-y-2"><Label htmlFor="contractSignatureDate">Contract signature date</Label><Input id="contractSignatureDate" name="contractSignatureDate" type="date" defaultValue={project?.contractSignatureDate} /></div>
+      <div className="space-y-2"><Label htmlFor="startDate">Commencement date</Label><Input id="startDate" name="startDate" type="date" defaultValue={project?.startDate} /></div>
+      <div className="space-y-2"><Label htmlFor="expectedCompletion">Intended completion date</Label><Input id="expectedCompletion" name="expectedCompletion" type="date" defaultValue={project?.expectedCompletion} /></div>
+      <div className="space-y-2"><Label htmlFor="extendedCompletion">Extended completion date</Label><Input id="extendedCompletion" name="extendedCompletion" type="date" defaultValue={project?.extendedCompletion} /></div>
     </div>
   </FormFrame>;
+}
+
+export function DeleteProjectButton({ projectId, projectName }: { projectId: string; projectName: string }) {
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+
+  async function handle(formData: FormData) {
+    if (!window.confirm(`Delete ${projectName}? It will be removed from the project list. Use this when the project was entered by mistake.`)) return;
+    setPending(true);
+    setError(null);
+    const result = await deleteConstructionProject(formData);
+    setPending(false);
+    if (!result.success) {
+      setError(result.error);
+      return;
+    }
+    router.push("/dashboard/projects?removed=1");
+    router.refresh();
+  }
+
+  return (
+    <form action={handle} className="inline-flex flex-col items-start gap-1">
+      <input type="hidden" name="id" value={projectId} />
+      <Button type="submit" variant="destructive" size="sm" disabled={pending}>
+        {pending ? "Deleting…" : "Delete project"}
+      </Button>
+      {error ? <span className="text-xs text-rose-700">{error}</span> : null}
+    </form>
+  );
 }
 
 export function ProjectPlanItemForm({ projectId }: { projectId: string }) {

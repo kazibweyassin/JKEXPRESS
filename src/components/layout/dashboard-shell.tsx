@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   Bell,
+  CircleHelp,
   ChevronDown,
   LogOut,
   Menu,
@@ -62,11 +63,13 @@ export function DashboardShell({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
 
   const closeMenus = () => {
     setProfileOpen(false);
     setCreateOpen(false);
+    setHelpOpen(false);
     setNotifOpen(false);
   };
 
@@ -225,12 +228,55 @@ export function DashboardShell({
             <div className="relative">
               <button
                 type="button"
+                className="flex items-center gap-2 rounded-md p-2 text-slate-600 hover:bg-navy-50"
+                aria-label="Help"
+                aria-expanded={helpOpen}
+                onClick={() => {
+                  setHelpOpen((v) => !v);
+                  setProfileOpen(false);
+                  setCreateOpen(false);
+                  setNotifOpen(false);
+                }}
+              >
+                <CircleHelp className="h-5 w-5" />
+                <span className="hidden text-sm sm:inline">Help</span>
+              </button>
+              {helpOpen ? (
+                <div className="absolute right-0 mt-1 w-80 rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
+                  <div className="border-b border-slate-100 pb-2">
+                    <p className="text-sm font-semibold text-navy-900">Using JK Express</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      A quick guide to the workspace.
+                    </p>
+                  </div>
+                  <ul className="space-y-2 py-3 text-xs text-slate-600">
+                    <li><span className="font-semibold text-slate-900">Navigate:</span> use the sidebar to open the modules available to your role.</li>
+                    <li><span className="font-semibold text-slate-900">Find records:</span> use Search to locate leads, properties, tenants, and projects.</li>
+                    <li><span className="font-semibold text-slate-900">Create work:</span> use Quick create for common tasks, then complete and save the form.</li>
+                    <li><span className="font-semibold text-slate-900">Stay updated:</span> check Notifications for assignments, approvals, and activity.</li>
+                    <li><span className="font-semibold text-slate-900">Manage settings:</span> open your profile menu for Settings and Sign out.</li>
+                  </ul>
+                  <Link
+                    href="/dashboard/settings"
+                    className="block border-t border-slate-100 pt-2 text-xs font-medium text-navy-800 hover:underline"
+                    onClick={() => setHelpOpen(false)}
+                  >
+                    Open settings
+                  </Link>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="relative">
+              <button
+                type="button"
                 className="relative rounded-md p-2 text-slate-600 hover:bg-navy-50"
                 aria-label="Notifications"
                 onClick={() => {
                   setNotifOpen((v) => !v);
                   setProfileOpen(false);
                   setCreateOpen(false);
+                  setHelpOpen(false);
                 }}
               >
                 <Bell className="h-5 w-5" />
@@ -304,6 +350,7 @@ export function DashboardShell({
                 onClick={() => {
                   setProfileOpen((v) => !v);
                   setCreateOpen(false);
+                  setHelpOpen(false);
                   setNotifOpen(false);
                 }}
                 className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-navy-50"

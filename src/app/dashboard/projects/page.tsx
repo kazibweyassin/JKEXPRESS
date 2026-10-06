@@ -13,7 +13,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { requirePagePermission } from "@/lib/auth-guard";
+import { DeleteProjectButton } from "@/components/forms/construction-forms";
+import { hasSessionPermission, requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { safeQuery } from "@/lib/safe-query";
 import { formatCurrency, formatDate, statusLabel } from "@/lib/utils";
@@ -24,9 +25,11 @@ export const metadata = { title: "Projects" };
 export default async function ProjectsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ status?: string; q?: string }>;
+  searchParams?: Promise<{ status?: string; q?: string; removed?: string }>;
 }) {
-  await requirePagePermission("projects");
+  const session = await requirePagePermission("projects");
+  const canEdit = hasSessionPermission(session, "projects", "edit");
+  const canDelete = canEdit || hasSessionPermission(session, "projects", "delete");
   const filters = await searchParams;
   const statusFilter = ["ALL", "PLANNING", "ACTIVE", "ON_HOLD", "DELAYED", "COMPLETED"].includes(filters?.status ?? "") ? filters?.status : "ALL";
   const query = filters?.q?.trim() ?? "";
@@ -69,6 +72,12 @@ export default async function ProjectsPage({
         <StatCard title="Paused or delayed" value={pausedCount} icon={PauseCircle} subtitle={`${completedCount} completed`} tone={pausedCount ? "warning" : "default"} />
       </div>
 
+      {filters?.removed === "1" ? (
+        <p className="mb-4 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800" role="status">
+          Project deleted. It no longer appears in the list.
+        </p>
+      ) : null}
+
       <form className="mb-6 flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-end" method="get">
         <label className="min-w-0 flex-1 text-sm font-medium text-slate-700">Search projects<input name="q" defaultValue={query} placeholder="Name, code or client" className="mt-1 block h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-normal outline-none focus:border-navy-500 focus:ring-2 focus:ring-navy-100" /></label>
         <label className="text-sm font-medium text-slate-700">Status<select name="status" defaultValue={statusFilter} className="mt-1 block h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-normal outline-none focus:border-navy-500 focus:ring-2 focus:ring-navy-100 sm:w-44"><option value="ALL">All statuses</option><option value="PLANNING">Planning</option><option value="ACTIVE">Active</option><option value="ON_HOLD">On hold</option><option value="DELAYED">Delayed</option><option value="COMPLETED">Completed</option></select></label>
@@ -95,6 +104,7 @@ export default async function ProjectsPage({
                   <TableHead>Budget</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Target</TableHead>
+                  {canEdit || canDelete ? <TableHead>Actions</TableHead> : null}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -139,6 +149,18 @@ export default async function ProjectsPage({
                     <TableCell className="whitespace-nowrap text-xs">
                       {formatDate(p.expectedCompletion)}
                     </TableCell>
+                    {canEdit || canDelete ? (
+                      <TableCell className="whitespace-nowrap">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {canEdit ? (
+                            <Link href={`/dashboard/projects/${p.id}/edit`} className="text-sm font-medium text-navy-800 hover:underline">
+                              Edit
+                            </Link>
+                          ) : null}
+                          {canDelete ? <DeleteProjectButton projectId={p.id} projectName={p.name} /> : null}
+                        </div>
+                      </TableCell>
+                    ) : null}
                   </TableRow>
                 ))}
               </TableBody>

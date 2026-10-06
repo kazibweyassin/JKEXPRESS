@@ -22,7 +22,7 @@ export type ActionResult =
 
 async function requireUser(
   resource: "projects" | "inventory" | "procurement" | "contractors" | "suppliers" | "equipment",
-  action: "create" | "edit" | "approve",
+  action: "create" | "edit" | "approve" | "delete",
 ) {
   const session = await auth();
   if (!session?.user || !hasPermission(session.user.permissions, resource, action)) {
@@ -125,6 +125,150 @@ export async function createConstructionProject(formData: FormData): Promise<Act
   } catch (error) {
     console.error(error);
     return { success: false, error: "Could not create the project. Check the required fields." };
+  }
+}
+
+const projectStatuses = ["PLANNING", "AWAITING_APPROVAL", "ACTIVE", "ON_HOLD", "DELAYED", "COMPLETED", "CANCELLED"] as const;
+
+function nullableText(value: FormDataEntryValue | null) {
+  const raw = String(value ?? "").trim();
+  return raw || null;
+}
+
+function nullableAmount(value: FormDataEntryValue | null) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed < 0) return undefined;
+  return parsed;
+}
+
+function nullableDate(value: FormDataEntryValue | null) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return undefined;
+  return date;
+}
+
+export async function updateConstructionProject(formData: FormData): Promise<ActionResult> {
+  const user = await requireUser("projects", "edit");
+  if (!user) return { success: false, error: "Forbidden" };
+  try {
+    const data = z.object({
+      id: z.string().min(1),
+      name: z.string().trim().min(3).max(160),
+      clientName: z.string().max(160).nullable(),
+      procurementRefNo: z.string().max(160).nullable(),
+      supervisingConsultant: z.string().max(200).nullable(),
+      contractor: z.string().max(200).nullable(),
+      location: z.string().max(200).nullable(),
+      city: z.string().max(100).nullable(),
+      description: z.string().max(3000).nullable(),
+      projectManagerId: z.string().min(1).nullable(),
+      contractCurrency: z.string().length(3),
+      contractValue: z.number().nonnegative().nullable(),
+      amendedContractValue: z.number().nonnegative().nullable(),
+      approvedBudget: z.number().nonnegative().nullable(),
+      status: z.enum(projectStatuses),
+    }).parse({
+      id: String(formData.get("id") ?? ""),
+      name: String(formData.get("name") ?? "").trim(),
+      clientName: nullableText(formData.get("clientName")),
+      procurementRefNo: nullableText(formData.get("procurementRefNo")),
+      supervisingConsultant: nullableText(formData.get("supervisingConsultant")),
+      contractor: nullableText(formData.get("contractor")),
+      location: nullableText(formData.get("location")),
+      city: nullableText(formData.get("city")),
+      description: nullableText(formData.get("description")),
+      projectManagerId: nullableText(formData.get("projectManagerId")),
+      contractCurrency: (nullableText(formData.get("contractCurrency")) ?? "UGX").toUpperCase(),
+      contractValue: nullableAmount(formData.get("contractValue")),
+      amendedContractValue: nullableAmount(formData.get("amendedContractValue")),
+      approvedBudget: nullableAmount(formData.get("approvedBudget")),
+      status: String(formData.get("status") ?? ""),
+    });
+
+    const startDate = nullableDate(formData.get("startDate"));
+    const expectedCompletion = nullableDate(formData.get("expectedCompletion"));
+    const extendedCompletion = nullableDate(formData.get("extendedCompletion"));
+    const contractSignatureDate = nullableDate(formData.get("contractSignatureDate"));
+    if (
+      startDate === undefined ||
+      expectedCompletion === undefined ||
+      extendedCompletion === undefined ||
+      contractSignatureDate === undefined
+    ) {
+      return { success: false, error: "Check the project dates." };
+    }
+
+    const existing = await db.constructionProject.findFirst({
+      where: { id: data.id, deletedAt: null },
+      select: { id: true },
+    });
+    if (!existing) return { success: false, error: "Project not found." };
+
+    await db.constructionProject.update({
+      where: { id: data.id },
+      data: {
+        name: data.name,
+        clientName: data.clientName,
+        procurementRefNo: data.procurementRefNo,
+        supervisingConsultant: data.supervisingConsultant,
+        contractor: data.contractor,
+        location: data.location,
+        city: data.city,
+        description: data.description,
+        projectManagerId: data.projectManagerId,
+        contractCurrency: data.contractCurrency,
+        contractValue: data.contractValue,
+        amendedContractValue: data.amendedContractValue,
+        approvedBudget: data.approvedBudget,
+        startDate,
+        expectedCompletion,
+        extendedCompletion,
+        contractSignatureDate,
+        status: data.status,
+      },
+    });
+    revalidateConstruction([
+      "/dashboard",
+      "/dashboard/construction",
+      "/dashboard/projects",
+      `/dashboard/projects/${data.id}`,
+    ]);
+    return { success: true, id: data.id };
+  } catch (error) {
+    console.error(error);
+    return { success: false, error: "Could not update the project. Check the required fields." };
+  }
+}
+
+export async function deleteConstructionProject(formData: FormData): Promise<ActionResult> {
+  const user = (await requireUser("projects", "delete")) ?? (await requireUser("projects", "edit"));
+  if (!user) return { success: false, error: "Forbidden" };
+  try {
+    const id = String(formData.get("id") ?? "").trim();
+    if (!id) return { success: false, error: "Project is required." };
+    const existing = await db.constructionProject.findFirst({
+      where: { id, deletedAt: null },
+      select: { id: true },
+    });
+    if (!existing) return { success: false, error: "Project not found." };
+    await db.constructionProject.update({
+      where: { id },
+      data: { deletedAt: new Date(), isPublished: false },
+    });
+    revalidateConstruction([
+      "/dashboard",
+      "/dashboard/construction",
+      "/dashboard/projects",
+      `/dashboard/projects/${id}`,
+    ]);
+    return { success: true, id };
+  } catch (error) {
+    console.error(error);
+    return { success: false, error: "Could not delete the project." };
   }
 }
 

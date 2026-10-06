@@ -11,31 +11,36 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { requirePagePermission } from "@/lib/auth-guard";
+import {
+  AssignEmployeeForm,
+  AssignSubcontractorForm,
+  BoqForm,
+  DeleteProjectButton,
+  ProjectExpenseForm,
+  ProjectPlanItemForm,
+  SiteDiaryForm,
+  VariationOrderForm,
+} from "@/components/forms/construction-forms";
+import { hasSessionPermission, requirePagePermission } from "@/lib/auth-guard";
 import { db } from "@/lib/db";
 import { safeQuery } from "@/lib/safe-query";
 import { formatCurrency, formatDate, statusLabel } from "@/lib/utils";
 import { statusVariant } from "@/lib/status";
-import {
-  AssignEmployeeForm,
-  AssignSubcontractorForm,
-  ProjectPlanItemForm,
-  BoqForm,
-  SiteDiaryForm,
-  VariationOrderForm,
-  ProjectExpenseForm,
-} from "@/components/forms/construction-forms";
 
 export default async function ProjectDetailDashboardPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams?: Promise<{ created?: string }>;
+  searchParams?: Promise<{ created?: string; updated?: string }>;
 }) {
-  await requirePagePermission("projects");
+  const session = await requirePagePermission("projects");
+  const canEdit = hasSessionPermission(session, "projects", "edit");
+  const canDelete = canEdit || hasSessionPermission(session, "projects", "delete");
   const { id } = await params;
-  const created = (await searchParams)?.created === "1";
+  const query = await searchParams;
+  const created = query?.created === "1";
+  const updated = query?.updated === "1";
   const project = await safeQuery(
     () =>
       db.constructionProject.findFirst({
@@ -101,13 +106,22 @@ export default async function ProjectDetailDashboardPage({
   return (
     <div>
       {created ? <p className="mb-4 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800" role="status">Project created successfully.</p> : null}
+      {updated ? <p className="mb-4 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800" role="status">Project updated.</p> : null}
       <PageHeader
         title={project.name}
         description={`${project.code} · ${project.location ?? project.city ?? ""}`}
         actions={
-          <Link href="/dashboard/projects" className="text-sm text-navy-700 hover:underline">
-            ← Projects
-          </Link>
+          <>
+            {canEdit ? (
+              <Link href={`/dashboard/projects/${project.id}/edit`} className="rounded-md bg-navy-900 px-4 py-2 text-sm font-medium text-white hover:bg-navy-800">
+                Edit project
+              </Link>
+            ) : null}
+            {canDelete ? <DeleteProjectButton projectId={project.id} projectName={project.name} /> : null}
+            <Link href="/dashboard/projects" className="px-2 py-2 text-sm text-navy-700 hover:underline">
+              ← Projects
+            </Link>
+          </>
         }
       />
       <div className="mb-6 flex flex-wrap gap-2">

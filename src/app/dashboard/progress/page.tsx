@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DocumentForm } from "@/components/forms/directory-forms";
+import { WeeklyProgressForm } from "@/components/forms/construction-forms";
 import { RowAction } from "@/components/forms/form-frame";
 import { deleteDocument, restoreDocument } from "@/app/actions/directory";
 import { requirePagePermission } from "@/lib/auth-guard";
@@ -24,27 +25,25 @@ export default async function WeeklyProgressPage() {
   const recoveryCutoff = new Date();
   recoveryCutoff.setDate(recoveryCutoff.getDate() - 30);
 
-  const [reports, deletedReports, projects] = await Promise.all([
+  const [reports, deletedReports, projects, contractors, structuredReports] = await Promise.all([
     safeQuery(
       () =>
         db.document.findMany({
           where: { deletedAt: null, category: "REPORT" },
-          include: {
-            project: true,
-            uploadedBy: true,
-          },
+          include: { project: true, uploadedBy: true },
           orderBy: { createdAt: "desc" },
           take: 50,
         }),
       [],
     ),
     safeQuery(
-      () => db.document.findMany({
-        where: { category: "REPORT", deletedAt: { gte: recoveryCutoff } },
-        include: { project: true, uploadedBy: true },
-        orderBy: { deletedAt: "desc" },
-        take: 50,
-      }),
+      () =>
+        db.document.findMany({
+          where: { category: "REPORT", deletedAt: { gte: recoveryCutoff } },
+          include: { project: true, uploadedBy: true },
+          orderBy: { deletedAt: "desc" },
+          take: 50,
+        }),
       [],
     ),
     safeQuery(
@@ -53,6 +52,24 @@ export default async function WeeklyProgressPage() {
           where: { deletedAt: null },
           select: { id: true, name: true, code: true },
           orderBy: { name: "asc" },
+        }),
+      [],
+    ),
+    safeQuery(
+      () =>
+        db.contractor.findMany({
+          where: { deletedAt: null, isActive: true },
+          select: { id: true, name: true },
+          orderBy: { name: "asc" },
+        }),
+      [],
+    ),
+    safeQuery(
+      () =>
+        db.weeklyProgressReport.findMany({
+          include: { project: true, enteredBy: true, contractor: true },
+          orderBy: { weekStarting: "desc" },
+          take: 50,
         }),
       [],
     ),
@@ -74,6 +91,57 @@ export default async function WeeklyProgressPage() {
             projects={projects.map((p) => ({ id: p.id, label: `${p.code} — ${p.name}` }))}
             reportOnly
           />
+        </CardContent>
+      </Card>
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-base">Record structured weekly progress</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <WeeklyProgressForm
+            projects={projects.map((p) => ({ id: p.id, label: `${p.code} — ${p.name}` }))}
+            contractors={contractors.map((contractor) => ({ id: contractor.id, label: contractor.name }))}
+          />
+        </CardContent>
+      </Card>
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-base">Structured progress history</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {structuredReports.length === 0 ? (
+            <div className="px-6 py-8 text-center text-sm text-slate-500">No structured weekly reports recorded yet.</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Week</TableHead>
+                  <TableHead>Project</TableHead>
+                  <TableHead>Package</TableHead>
+                  <TableHead>Progress</TableHead>
+                  <TableHead>Labour</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Issues</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {structuredReports.map((report) => (
+                  <TableRow key={report.id}>
+                    <TableCell className="whitespace-nowrap">{formatDate(report.weekStarting)}</TableCell>
+                    <TableCell>
+                      <div className="font-medium">{report.project.name}</div>
+                      <div className="text-xs text-slate-500">{report.project.code}</div>
+                    </TableCell>
+                    <TableCell>{report.contractor?.name ?? "Company works"}</TableCell>
+                    <TableCell>{report.progressPercent != null ? `${Math.round(report.progressPercent)}%` : "—"}</TableCell>
+                    <TableCell>{report.labourOnSite ?? "—"}</TableCell>
+                    <TableCell>{report.status.replaceAll("_", " ")}</TableCell>
+                    <TableCell className="max-w-[240px] truncate text-xs">{report.delays ?? "None recorded"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
       <Card>

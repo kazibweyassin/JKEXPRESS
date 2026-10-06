@@ -31,7 +31,7 @@ export default async function ProjectsPage({
   const canEdit = hasSessionPermission(session, "projects", "edit");
   const canDelete = canEdit || hasSessionPermission(session, "projects", "delete");
   const filters = await searchParams;
-  const statusFilter = ["ALL", "PLANNING", "ACTIVE", "ON_HOLD", "DELAYED", "COMPLETED"].includes(filters?.status ?? "") ? filters?.status : "ALL";
+  const statusFilter = ["ALL", "PLANNING", "AWAITING_APPROVAL", "ACTIVE", "ON_HOLD", "DELAYED", "COMPLETED", "CANCELLED"].includes(filters?.status ?? "") ? filters?.status : "ALL";
   const query = filters?.q?.trim() ?? "";
 
   const projects = await safeQuery(
@@ -80,7 +80,7 @@ export default async function ProjectsPage({
 
       <form className="mb-6 flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-end" method="get">
         <label className="min-w-0 flex-1 text-sm font-medium text-slate-700">Search projects<input name="q" defaultValue={query} placeholder="Name, code or client" className="mt-1 block h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-normal outline-none focus:border-navy-500 focus:ring-2 focus:ring-navy-100" /></label>
-        <label className="text-sm font-medium text-slate-700">Status<select name="status" defaultValue={statusFilter} className="mt-1 block h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-normal outline-none focus:border-navy-500 focus:ring-2 focus:ring-navy-100 sm:w-44"><option value="ALL">All statuses</option><option value="PLANNING">Planning</option><option value="ACTIVE">Active</option><option value="ON_HOLD">On hold</option><option value="DELAYED">Delayed</option><option value="COMPLETED">Completed</option></select></label>
+        <label className="text-sm font-medium text-slate-700">Status<select name="status" defaultValue={statusFilter} className="mt-1 block h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-normal outline-none focus:border-navy-500 focus:ring-2 focus:ring-navy-100 sm:w-44"><option value="ALL">All statuses</option><option value="PLANNING">Planning</option><option value="AWAITING_APPROVAL">Awaiting approval</option><option value="ACTIVE">Active</option><option value="ON_HOLD">On hold</option><option value="DELAYED">Delayed</option><option value="COMPLETED">Completed</option><option value="CANCELLED">Cancelled</option></select></label>
         <button type="submit" className="h-10 rounded-md bg-navy-900 px-4 text-sm font-medium text-white hover:bg-navy-800">Filter</button>
         {query || statusFilter !== "ALL" ? <Link href="/dashboard/projects" className="h-10 px-2 py-2 text-sm text-navy-700 hover:underline">Clear</Link> : null}
       </form>
